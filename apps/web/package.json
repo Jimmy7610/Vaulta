@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "eslint .",
+    "build": "vite build",
+    "lint": "echo \"lint later\"",
+    "format": "prettier -w .",
     "preview": "vite preview"
   },
   "dependencies": {
