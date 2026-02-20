@@ -36,5 +36,10 @@ Tester: Antigravity
 - [x] Web: EntryDetail opens
 - [x] Web: Models dropdown loads models dynamically
 - [x] Web: Selecting model persists after refresh
-- [x] Web: Analyze uses selected model correctly
-- [x] Web: UI displays friendly error if Ollama is unreachable
+- [x] Web: Analyzing using the selected model still performs as expected with the new UI
+
+## UI Pass Verification (v0.2.2)
+- [x] UI: Vault grid cards are modernized with tighter typography and hover-elevation.
+- [x] UI: EntryDetail layout separates fragment source and analysis.
+- [x] UI: Model picker is customized with a seamless dark theme style.
+- [x] UI: Analysis metadata displays properly (chips and badges instead of plain text).

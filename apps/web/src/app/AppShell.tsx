@@ -80,22 +80,22 @@ export function AppShell() {
                 onClick={() => select(e.id)}
                 className={cn(
                   "group relative flex flex-col items-start text-left w-full h-full",
-                  "rounded-2xl border border-neutral-900 bg-neutral-950/50 p-5",
+                  "rounded-[20px] border border-neutral-900/60 bg-neutral-950/40 p-5",
                   "shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-neutral-800 hover:shadow-md hover:shadow-black/40 hover:bg-neutral-900/40"
                 )}
               >
-                <div className="flex w-full items-center justify-between">
-                  <div className="text-[11px] font-medium uppercase tracking-wider text-neutral-500">{e.meta?.type ?? "unfiled"}</div>
-                  <div className="text-[11px] font-medium text-neutral-600">{new Date(e.createdAt).toLocaleDateString()}</div>
+                <div className="flex w-full items-center justify-between mb-3">
+                  <div className="text-[10px] font-medium uppercase tracking-widest text-neutral-500">{e.meta?.type ?? "unfiled"}</div>
+                  <div className="text-[10px] font-medium text-neutral-600">{new Date(e.createdAt).toLocaleDateString()}</div>
                 </div>
 
-                <div className="mt-3 mb-1 line-clamp-4 text-[15px] leading-relaxed text-neutral-300 transition-colors group-hover:text-neutral-100">
+                <div className="mb-2 line-clamp-4 text-[14px] leading-relaxed text-neutral-300 transition-colors group-hover:text-neutral-100">
                   {snippet(e.text)}
                 </div>
 
                 <div className="mt-auto pt-4 flex flex-wrap gap-1.5 self-start">
                   {(e.meta?.themes ?? []).slice(0, 3).map((t) => (
-                    <span key={t} className="rounded-md border border-neutral-800/60 bg-neutral-900/40 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-neutral-400">
+                    <span key={t} className="rounded-md border border-neutral-800/60 bg-neutral-900/30 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-neutral-400">
                       {t}
                     </span>
                   ))}
