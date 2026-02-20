@@ -13,6 +13,7 @@ type EntriesState = {
     typeFilter: string[];
     themeFilter: string[];
     dateFilter: DateFilter;
+    viewMode: "vault" | "map";
 
     load: () => Promise<void>;
     select: (id: string | null) => void;
@@ -23,6 +24,7 @@ type EntriesState = {
     setTypeFilter: (types: string[]) => void;
     setThemeFilter: (themes: string[]) => void;
     setDateFilter: (df: DateFilter) => void;
+    setViewMode: (mode: "vault" | "map") => void;
     clearFilters: () => void;
 };
 
@@ -40,11 +42,13 @@ export const useEntriesStore = create<EntriesState>((set, get) => ({
     typeFilter: [],
     themeFilter: [],
     dateFilter: "any",
+    viewMode: "vault",
 
     setSearchQuery: (q) => set({ searchQuery: q }),
     setTypeFilter: (types) => set({ typeFilter: types }),
     setThemeFilter: (themes) => set({ themeFilter: themes }),
     setDateFilter: (df) => set({ dateFilter: df }),
+    setViewMode: (mode) => set({ viewMode: mode }),
     clearFilters: () => set({ searchQuery: "", typeFilter: [], themeFilter: [], dateFilter: "any" }),
 
     load: async () => {

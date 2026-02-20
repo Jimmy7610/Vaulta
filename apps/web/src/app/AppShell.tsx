@@ -5,9 +5,11 @@ import { QuickCaptureModal } from "../components/QuickCaptureModal";
 import { useEntriesStore, useFilteredEntries } from "../features/entries/store";
 import { EntryDetail } from "../components/EntryDetail";
 import { ReflectionPanel } from "../components/ReflectionPanel";
+import { ConnectionsMap } from "../components/ConnectionsMap";
 import { Toast } from "../components/Toast";
 import { cn } from "../lib/cn";
 import { useMemo } from "react";
+import { Network, Grid2x2 } from "lucide-react";
 
 function snippet(text: string) {
   const s = text.trim().replace(/\s+/g, " ");
@@ -23,6 +25,7 @@ export function AppShell() {
     typeFilter, setTypeFilter,
     themeFilter, setThemeFilter,
     dateFilter, setDateFilter,
+    viewMode, setViewMode,
     clearFilters
   } = useEntriesStore();
 
@@ -51,6 +54,7 @@ export function AppShell() {
     const types = params.getAll("type"); if (types.length) setTypeFilter(types);
     const themes = params.getAll("theme"); if (themes.length) setThemeFilter(themes);
     const df = params.get("date") as any; if (df) setDateFilter(df);
+    const view = params.get("view") as any; if (view === "vault" || view === "map") setViewMode(view);
   }, []); // eslint-disable-line
 
   // Sync back to URL
@@ -64,7 +68,7 @@ export function AppShell() {
     const qs = params.toString();
     const url = qs ? `?${qs}` : window.location.pathname;
     window.history.replaceState({}, "", url);
-  }, [searchQuery, typeFilter, themeFilter, dateFilter]);
+  }, [searchQuery, typeFilter, themeFilter, dateFilter, viewMode]);
 
   // Global Keyboard Shortcuts
   useEffect(() => {
@@ -94,7 +98,33 @@ export function AppShell() {
             <button className="text-neutral-400 hover:text-neutral-200 transition-colors">
               <Menu className="h-5 w-5" />
             </button>
-            <div className="text-[22px] font-medium tracking-tight text-neutral-100 font-serif">Vaulta</div>
+            <div className="text-[22px] font-medium tracking-tight text-neutral-100 font-serif flex items-center gap-3">
+              Vaulta
+
+              <div className="flex bg-neutral-900/40 border border-neutral-800/80 rounded-lg p-0.5 ml-4">
+                <button
+                  onClick={() => setViewMode("vault")}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-1 text-[12px] font-medium rounded-md transition-colors",
+                    viewMode === "vault" ? "bg-neutral-800 text-neutral-200" : "text-neutral-500 hover:text-neutral-300"
+                  )}
+                >
+                  <Grid2x2 className="h-3.5 w-3.5" />
+                  Vault
+                </button>
+                <button
+                  onClick={() => setViewMode("map")}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-1 text-[12px] font-medium rounded-md transition-colors",
+                    viewMode === "map" ? "bg-neutral-800 text-neutral-200" : "text-neutral-500 hover:text-neutral-300"
+                  )}
+                >
+                  <Network className="h-3.5 w-3.5" />
+                  Map
+                </button>
+              </div>
+
+            </div>
           </div>
 
           <div className="flex items-center gap-4">
@@ -195,73 +225,79 @@ export function AppShell() {
           )}
         </div>
 
-        <ReflectionPanel />
-
-        {error && (
-          <div className="mb-4 rounded-2xl border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">
-            {error}
-          </div>
-        )}
-
-        {loading ? (
-          <div className="text-sm text-neutral-500">Loading…</div>
-        ) : entries.length === 0 ? (
-          <div className="rounded-2xl border border-neutral-900 bg-neutral-950 p-6">
-            <div className="text-sm text-neutral-400">No entries yet.</div>
-            <div className="mt-2 text-neutral-500">
-              Hit <span className="text-neutral-200">Capture</span> and drop the first fragment.
-            </div>
-          </div>
-        ) : filteredEntries.length === 0 ? (
-          <div className="rounded-2xl border border-neutral-900 bg-neutral-950 p-8 text-center max-w-2xl mx-auto">
-            <div className="text-[15px] text-neutral-400 mb-4">No fragments match your current search and filters.</div>
-            <button
-              onClick={clearFilters}
-              className="rounded-lg bg-neutral-800 px-4 py-2 text-[13px] font-medium text-neutral-200 hover:bg-neutral-700 transition-colors"
-            >
-              Clear all filters
-            </button>
-          </div>
+        {viewMode === "map" ? (
+          <ConnectionsMap />
         ) : (
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filteredEntries.map((e) => (
-              <button
-                key={e.id}
-                onClick={() => select(e.id)}
-                className={cn(
-                  "group relative flex flex-col items-start text-left w-full h-full",
-                  "rounded-[20px] border border-neutral-900/60 bg-neutral-950/40 p-5",
-                  "shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-neutral-800 hover:shadow-md hover:shadow-black/40 hover:bg-neutral-900/40"
-                )}
-              >
-                <div className="flex w-full items-start justify-between mb-4">
-                  <div className="rounded-md bg-neutral-800/50 px-2 py-0.5 text-[11px] font-medium text-neutral-400">
-                    {e.meta?.type ?? "unfiled"}
-                  </div>
-                  <MoreHorizontal className="h-4 w-4 text-neutral-500" />
-                </div>
+          <>
+            <ReflectionPanel />
 
-                <div className="mb-5 line-clamp-3 text-[18px] leading-[1.4] text-neutral-200 font-serif">
-                  {snippet(e.text)}
-                </div>
+            {error && (
+              <div className="mb-4 rounded-2xl border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">
+                {error}
+              </div>
+            )}
 
-                <div className="mt-auto pt-2 w-full">
-                  {e.meta?.themes && e.meta.themes.length > 0 && (
-                    <div className="mb-3 flex flex-wrap gap-1.5">
-                      {e.meta.themes.slice(0, 3).map((t) => (
-                        <span key={t} className="rounded-full border border-neutral-800 bg-neutral-900/20 px-2.5 py-0.5 text-[11px] font-medium text-neutral-500">
-                          {t}
-                        </span>
-                      ))}
+            {loading ? (
+              <div className="text-sm text-neutral-500">Loading…</div>
+            ) : entries.length === 0 ? (
+              <div className="rounded-2xl border border-neutral-900 bg-neutral-950 p-6">
+                <div className="text-sm text-neutral-400">No entries yet.</div>
+                <div className="mt-2 text-neutral-500">
+                  Hit <span className="text-neutral-200">Capture</span> and drop the first fragment.
+                </div>
+              </div>
+            ) : filteredEntries.length === 0 ? (
+              <div className="rounded-2xl border border-neutral-900 bg-neutral-950 p-8 text-center max-w-2xl mx-auto">
+                <div className="text-[15px] text-neutral-400 mb-4">No fragments match your current search and filters.</div>
+                <button
+                  onClick={clearFilters}
+                  className="rounded-lg bg-neutral-800 px-4 py-2 text-[13px] font-medium text-neutral-200 hover:bg-neutral-700 transition-colors"
+                >
+                  Clear all filters
+                </button>
+              </div>
+            ) : (
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {filteredEntries.map((e) => (
+                  <button
+                    key={e.id}
+                    onClick={() => select(e.id)}
+                    className={cn(
+                      "group relative flex flex-col items-start text-left w-full h-full",
+                      "rounded-[20px] border border-neutral-900/60 bg-neutral-950/40 p-5",
+                      "shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-neutral-800 hover:shadow-md hover:shadow-black/40 hover:bg-neutral-900/40"
+                    )}
+                  >
+                    <div className="flex w-full items-start justify-between mb-4">
+                      <div className="rounded-md bg-neutral-800/50 px-2 py-0.5 text-[11px] font-medium text-neutral-400">
+                        {e.meta?.type ?? "unfiled"}
+                      </div>
+                      <MoreHorizontal className="h-4 w-4 text-neutral-500" />
                     </div>
-                  )}
-                  <div className="text-[11px] font-medium text-neutral-600">
-                    {new Date(e.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
+
+                    <div className="mb-5 line-clamp-3 text-[18px] leading-[1.4] text-neutral-200 font-serif">
+                      {snippet(e.text)}
+                    </div>
+
+                    <div className="mt-auto pt-2 w-full">
+                      {e.meta?.themes && e.meta.themes.length > 0 && (
+                        <div className="mb-3 flex flex-wrap gap-1.5">
+                          {e.meta.themes.slice(0, 3).map((t) => (
+                            <span key={t} className="rounded-full border border-neutral-800 bg-neutral-900/20 px-2.5 py-0.5 text-[11px] font-medium text-neutral-500">
+                              {t}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      <div className="text-[11px] font-medium text-neutral-600">
+                        {new Date(e.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </main>
 
