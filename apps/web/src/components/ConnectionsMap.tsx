@@ -7,7 +7,7 @@ import { Zap, LayoutGrid } from "lucide-react";
 import { MapThemePicker } from "./MapThemePicker";
 
 export function ConnectionsMap() {
-    const { select, mapTheme, setMapTheme, focusMode, setFocusMode, showUnclustered, setShowUnclustered } = useEntriesStore();
+    const { select, mapTheme, focusMode, setFocusMode, showUnclustered, setShowUnclustered } = useEntriesStore();
     const entries = useFilteredEntries();
 
     const graphRef = useRef<any>(null);
@@ -75,22 +75,12 @@ export function ConnectionsMap() {
 
     if (graphData.nodes.length < 2 || graphData.links.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center h-full px-6 text-center max-w-lg mx-auto">
-                <div className="rounded-3xl border border-neutral-900/60 bg-neutral-950/40 p-12 w-full">
-                    <div className="text-[15px] text-neutral-300 font-serif italic mb-3">
-                        No connections yet.
-                    </div>
-                    <div className="text-[13px] text-neutral-500 mb-6">
-                        Either clear map filters to see more entries, or analyze fragments to generate connective themes.
-                    </div>
-                    {(mapTheme || !showUnclustered) && (
-                        <button
-                            onClick={() => { setMapTheme(""); setShowUnclustered(true); }}
-                            className="rounded-lg bg-neutral-800 px-4 py-2 text-[13px] font-medium text-neutral-200 hover:bg-neutral-700 transition-colors"
-                        >
-                            Reset map filters
-                        </button>
-                    )}
+            <div className="flex flex-col items-center justify-center py-24 px-6 text-center max-w-lg mx-auto border border-neutral-900/60 rounded-3xl bg-neutral-950/40 mt-12">
+                <div className="text-[15px] text-neutral-300 font-serif italic mb-2">
+                    No connections yet.
+                </div>
+                <div className="text-[13px] text-neutral-500">
+                    Analyze a few fragments to reveal shared themes.
                 </div>
             </div>
         );

@@ -253,9 +253,9 @@ export function AppShell() {
                     key={e.id}
                     onClick={() => select(e.id)}
                     className={cn(
-                      "group relative flex flex-col items-start text-left w-full h-full",
+                      "group relative flex flex-col items-start text-left w-full h-full cursor-pointer",
                       "rounded-[20px] border border-neutral-900/60 bg-neutral-950/40 p-5",
-                      "shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-neutral-800 hover:shadow-md hover:shadow-black/40 hover:bg-neutral-900/40"
+                      "shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:border-neutral-800 hover:shadow-lg hover:shadow-black/60 hover:bg-neutral-900/40"
                     )}
                   >
                     <div className="flex w-full items-start justify-between mb-4">
