@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import { analyzeTextWithOllama, checkOllama } from "./ollama";
+import { analyzeTextWithOllama, checkOllama, listOllamaModels, getDefaultModel } from "./ollama";
 
 const app = express();
 app.use(cors());
@@ -18,6 +18,11 @@ app.get("/health", async (_req, res) => {
     });
 });
 
+app.get("/ollama/models", async (_req, res) => {
+    const models = await listOllamaModels(OLLAMA_BASE_URL);
+    res.json({ ok: true, models });
+});
+
 app.post("/analyze", async (req, res) => {
     const text = typeof req.body?.text === "string" ? req.body.text.trim() : "";
     if (!text) {
@@ -25,7 +30,7 @@ app.post("/analyze", async (req, res) => {
     }
 
     // Optional: allow passing model from client
-    const model = typeof req.body?.model === "string" ? req.body.model : OLLAMA_MODEL;
+    let model = typeof req.body?.model === "string" && req.body.model ? req.body.model : null;
 
     const ollamaStatus = await checkOllama(OLLAMA_BASE_URL);
     if (!ollamaStatus.ok) {
@@ -35,6 +40,17 @@ app.post("/analyze", async (req, res) => {
             message: `Ollama not reachable at ${OLLAMA_BASE_URL}`,
             details: ollamaStatus.message ?? null
         });
+    }
+
+    if (!model) {
+        model = await getDefaultModel(OLLAMA_BASE_URL);
+        if (!model) {
+            return res.status(409).json({
+                ok: false,
+                code: "NO_MODELS",
+                message: "No models installed in Ollama. Please run e.g. 'ollama pull llama3.1' first."
+            });
+        }
     }
 
     try {

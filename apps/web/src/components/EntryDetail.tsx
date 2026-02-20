@@ -2,24 +2,46 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Sparkles } from "lucide-react";
 import { cn } from "../lib/cn";
 import { useEntriesStore } from "../features/entries/store";
-import { analyze } from "../lib/api";
-import { useMemo, useState } from "react";
+import { analyze, getModels } from "../lib/api";
+import { useSettingsStore } from "../features/settings/store";
+import { useMemo, useState, useEffect } from "react";
 
 export function EntryDetail() {
     const { entries, selectedId, select, setMeta } = useEntriesStore();
+    const { selectedModel, setSelectedModel } = useSettingsStore();
     const entry = useMemo(() => entries.find((e) => e.id === selectedId) ?? null, [entries, selectedId]);
     const [busy, setBusy] = useState(false);
     const [err, setErr] = useState<string | null>(null);
+    const [models, setModels] = useState<string[]>([]);
+    const [modelsLoading, setModelsLoading] = useState(false);
+
+    useEffect(() => {
+        if (!entry) return;
+        let active = true;
+        setModelsLoading(true);
+        getModels().then(m => {
+            if (active) {
+                setModels(m);
+                setModelsLoading(false);
+            }
+        });
+        return () => { active = false; };
+    }, [entry]);
 
     async function onAnalyze() {
         if (!entry) return;
         setBusy(true);
         setErr(null);
         try {
-            const meta = await analyze(entry.text);
+            const meta = await analyze(entry.text, selectedModel);
             await setMeta(entry.id, meta);
         } catch (e: any) {
-            setErr(e?.message ?? "Analyze failed");
+            const msg = e?.message ?? "Analyze failed";
+            if (msg.includes("model") && msg.includes("not found")) {
+                setErr(`Model not installed in Ollama. Pull it first: ollama pull ${selectedModel || 'llama3.1'}`);
+            } else {
+                setErr(msg);
+            }
         } finally {
             setBusy(false);
         }
@@ -62,23 +84,40 @@ export function EntryDetail() {
                             </div>
 
                             <div className="rounded-2xl border border-neutral-900 bg-neutral-950 p-4">
-                                <div className="flex items-center justify-between">
+                                <div className="flex flex-col gap-3 lg:flex-row lg:items-center justify-between">
                                     <div>
                                         <div className="text-sm font-semibold">Analysis</div>
                                         <div className="mt-1 text-xs text-neutral-500">Local Ollama metadata. Quiet, not chatty.</div>
                                     </div>
 
-                                    <button
-                                        onClick={onAnalyze}
-                                        disabled={busy}
-                                        className={cn(
-                                            "flex items-center gap-2 rounded-2xl px-3 py-2 text-sm font-semibold",
-                                            busy ? "bg-neutral-800 text-neutral-300" : "bg-neutral-100 text-neutral-950 hover:opacity-90"
-                                        )}
-                                    >
-                                        <Sparkles className="h-4 w-4" />
-                                        {busy ? "Analyzing…" : "Analyze"}
-                                    </button>
+                                    <div className="flex items-center gap-3">
+                                        <div className="text-xs">
+                                            {modelsLoading ? (
+                                                <span className="text-neutral-500">Loading models…</span>
+                                            ) : models.length === 0 ? (
+                                                <span className="text-red-400">No models found. Run: ollama pull llama3.2</span>
+                                            ) : (
+                                                <select
+                                                    className="rounded-lg border border-neutral-800 bg-neutral-900 px-2 py-1 outline-none focus:border-neutral-500"
+                                                    value={selectedModel || (models.length > 0 ? models[0] : "")}
+                                                    onChange={(e) => setSelectedModel(e.target.value)}
+                                                >
+                                                    {models.map(m => <option key={m} value={m}>{m}</option>)}
+                                                </select>
+                                            )}
+                                        </div>
+                                        <button
+                                            onClick={onAnalyze}
+                                            disabled={busy || (!modelsLoading && models.length === 0)}
+                                            className={cn(
+                                                "flex items-center gap-2 rounded-2xl px-3 py-2 text-sm font-semibold",
+                                                (busy || (!modelsLoading && models.length === 0)) ? "bg-neutral-800 text-neutral-500" : "bg-neutral-100 text-neutral-950 hover:opacity-90"
+                                            )}
+                                        >
+                                            <Sparkles className="h-4 w-4" />
+                                            {busy ? "Analyzing…" : "Analyze"}
+                                        </button>
+                                    </div>
                                 </div>
 
                                 {err && <div className="mt-3 rounded-xl border border-red-900/60 bg-red-950/40 px-3 py-2 text-sm text-red-200">{err}</div>}

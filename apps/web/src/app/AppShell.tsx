@@ -4,6 +4,7 @@ import { useUIStore } from "./store";
 import { QuickCaptureModal } from "../components/QuickCaptureModal";
 import { useEntriesStore } from "../features/entries/store";
 import { EntryDetail } from "../components/EntryDetail";
+import { cn } from "../lib/cn";
 
 function snippet(text: string) {
   const s = text.trim().replace(/\s+/g, " ");
@@ -20,10 +21,10 @@ export function AppShell() {
 
   return (
     <div className="min-h-full">
-      <header className="sticky top-0 z-10 border-b border-neutral-900 bg-neutral-950/70 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
+      <header className="sticky top-0 z-10 border-b border-neutral-900 bg-[var(--bg)]/80 backdrop-blur-md">
+        <div className="mx-auto flex max-w-[1000px] items-center justify-between px-6 py-5">
           <div className="flex items-baseline gap-3">
-            <div className="text-xl font-semibold tracking-tight">Vaulta</div>
+            <div className="text-[20px] font-medium tracking-tight text-neutral-100">Vaulta</div>
             <div className="text-xs text-neutral-500">A calm place for unfinished thoughts.</div>
           </div>
 
@@ -47,11 +48,11 @@ export function AppShell() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-5 py-8">
-        <div className="mb-6">
-          <div className="text-sm text-neutral-400">Vault</div>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight">Fragments, safely held.</h1>
-          <p className="mt-2 max-w-2xl text-neutral-400">
+      <main className="mx-auto max-w-[1000px] px-6 py-10">
+        <div className="mb-10">
+          <div className="text-[13px] font-medium tracking-wide text-neutral-500 uppercase">Vault</div>
+          <h1 className="mt-2 text-neutral-100">Fragments, safely held.</h1>
+          <p className="mt-2 max-w-xl text-[15px] leading-relaxed text-neutral-400">
             Vaulta is local-first. You capture quickly; the system connects the dots later.
           </p>
         </div>
@@ -77,18 +78,28 @@ export function AppShell() {
               <button
                 key={e.id}
                 onClick={() => select(e.id)}
-                className="text-left rounded-2xl border border-neutral-900 bg-neutral-950 p-5 shadow-sm hover:border-neutral-800"
+                className={cn(
+                  "group relative flex flex-col items-start text-left w-full h-full",
+                  "rounded-2xl border border-neutral-900 bg-neutral-950/50 p-5",
+                  "shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-neutral-800 hover:shadow-md hover:shadow-black/40 hover:bg-neutral-900/40"
+                )}
               >
-                <div className="text-xs text-neutral-500">{e.meta?.type ?? "unfiled"}</div>
-                <div className="mt-2 line-clamp-3 text-base leading-relaxed text-neutral-200">{snippet(e.text)}</div>
-                <div className="mt-4 flex flex-wrap gap-2">
+                <div className="flex w-full items-center justify-between">
+                  <div className="text-[11px] font-medium uppercase tracking-wider text-neutral-500">{e.meta?.type ?? "unfiled"}</div>
+                  <div className="text-[11px] font-medium text-neutral-600">{new Date(e.createdAt).toLocaleDateString()}</div>
+                </div>
+
+                <div className="mt-3 mb-1 line-clamp-4 text-[15px] leading-relaxed text-neutral-300 transition-colors group-hover:text-neutral-100">
+                  {snippet(e.text)}
+                </div>
+
+                <div className="mt-auto pt-4 flex flex-wrap gap-1.5 self-start">
                   {(e.meta?.themes ?? []).slice(0, 3).map((t) => (
-                    <span key={t} className="rounded-full border border-neutral-800 bg-neutral-900/40 px-2 py-0.5 text-[11px] text-neutral-300">
+                    <span key={t} className="rounded-md border border-neutral-800/60 bg-neutral-900/40 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-neutral-400">
                       {t}
                     </span>
                   ))}
                 </div>
-                <div className="mt-4 text-xs text-neutral-600">{new Date(e.createdAt).toLocaleDateString()}</div>
               </button>
             ))}
           </div>

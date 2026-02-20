@@ -28,3 +28,13 @@ Tester: Antigravity
 - Browser subagent completed verification smoothly.
 - IndexedDB handles entry persistence properly across DOM reloads.
 - Graceful failure correctly displays "Ollama generate failed" inline when the model (`llama3.1:latest`) or the server is unreachable.
+
+## Model Picker Verification (v0.2.1)
+- [x] Server: `GET /health` returns ok
+- [x] Server: `GET /ollama/models` returns model list
+- [x] Web: Entries persist after refresh
+- [x] Web: EntryDetail opens
+- [x] Web: Models dropdown loads models dynamically
+- [x] Web: Selecting model persists after refresh
+- [x] Web: Analyze uses selected model correctly
+- [x] Web: UI displays friendly error if Ollama is unreachable

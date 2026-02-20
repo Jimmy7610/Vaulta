@@ -13,9 +13,27 @@ body,
 }
 
 body {
-  @apply bg-neutral-950 text-neutral-100 antialiased;
+  @apply bg-[var(--bg)] text-neutral-200 antialiased selection:bg-neutral-200 selection:text-neutral-950;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-::selection {
-  @apply bg-neutral-200 text-neutral-950;
+@layer base {
+  :root {
+    --bg: #030303;
+  }
+
+  html {
+    @apply text-[15px] leading-relaxed tracking-tight;
+  }
+
+  h1 {
+    @apply text-3xl font-semibold tracking-tight lg:text-4xl;
+  }
+
+  h2,
+  h3,
+  h4 {
+    @apply font-semibold tracking-tight;
+  }
 }

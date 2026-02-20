@@ -12,6 +12,26 @@ export async function checkOllama(baseUrl = "http://localhost:11434"): Promise<{
     }
 }
 
+export async function listOllamaModels(baseUrl = "http://localhost:11434"): Promise<string[]> {
+    try {
+        const res = await fetch(`${baseUrl}/api/tags`);
+        if (!res.ok) return [];
+        const data = await res.json() as any;
+        if (Array.isArray(data?.models)) {
+            return data.models.map((m: any) => m.name);
+        }
+        return [];
+    } catch {
+        return [];
+    }
+}
+
+export async function getDefaultModel(baseUrl = "http://localhost:11434"): Promise<string | null> {
+    if (process.env.OLLAMA_MODEL) return process.env.OLLAMA_MODEL;
+    const models = await listOllamaModels(baseUrl);
+    return models.length > 0 ? models[0] : null;
+}
+
 export async function analyzeTextWithOllama(opts: {
     text: string;
     model?: string;
