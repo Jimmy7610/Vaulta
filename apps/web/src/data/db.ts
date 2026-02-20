@@ -81,6 +81,11 @@ export async function updateEntry(entry: Entry) {
     await db.put("entries", entry);
 }
 
+export async function deleteEntry(id: string) {
+    const db = await getDB();
+    await db.delete("entries", id);
+}
+
 export async function saveReflection(ref: Reflection) {
     const db = await getDB();
     await db.put("reflections", ref);

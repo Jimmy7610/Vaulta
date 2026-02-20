@@ -1,13 +1,14 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Sparkles, Check, Loader2 } from "lucide-react";
+import { X, Sparkles, Check, Loader2, Trash2 } from "lucide-react";
 import { cn } from "../lib/cn";
 import { useEntriesStore, useFilteredEntries } from "../features/entries/store";
 import { analyze, getModels } from "../lib/api";
 import { useSettingsStore } from "../features/settings/store";
 import { useMemo, useState, useEffect } from "react";
+import { ConfirmDialog } from "./ConfirmDialog";
 
 export function EntryDetail() {
-    const { entries, selectedId, select, setMeta } = useEntriesStore();
+    const { entries, selectedId, select, setMeta, remove } = useEntriesStore();
     const filteredEntries = useFilteredEntries();
     const { selectedModel, setSelectedModel } = useSettingsStore();
     const entry = useMemo(() => entries.find((e) => e.id === selectedId) ?? null, [entries, selectedId]);
@@ -18,6 +19,7 @@ export function EntryDetail() {
     const [models, setModels] = useState<string[]>([]);
     const [modelsLoading, setModelsLoading] = useState(false);
     const [isOffline, setIsOffline] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     useEffect(() => {
         if (!entry) return;
@@ -102,199 +104,220 @@ export function EntryDetail() {
     }
 
     return (
-        <AnimatePresence>
-            {entry && (
-                <motion.div className="fixed inset-0 z-[100]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                    <div className={cn("absolute inset-0 bg-black/60", !isReadingMode && "backdrop-blur-sm")} onClick={() => {
-                        if (!isReadingMode) {
-                            select(null);
-                        }
-                    }} />
+        <>
+            <AnimatePresence>
+                {entry && (
+                    <motion.div className="fixed inset-0 z-[100]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                        <div className={cn("absolute inset-0 bg-black/60", !isReadingMode && "backdrop-blur-sm")} onClick={() => {
+                            if (!isReadingMode) {
+                                select(null);
+                            }
+                        }} />
 
-                    <motion.div
-                        className={cn(
-                            "absolute top-0 h-full flex flex-col transition-all duration-300",
-                            isReadingMode ? "inset-x-0 w-full bg-[var(--bg)]" : "right-0 w-[min(560px,92vw)] border-l border-neutral-900 bg-[var(--bg)] shadow-2xl"
-                        )}
-                        initial={{ x: 40, opacity: 0 }}
-                        animate={{ x: 0, opacity: 1 }}
-                        exit={{ x: 40, opacity: 0 }}
-                        transition={{ type: "spring", stiffness: 260, damping: 26 }}
-                    >
-                        {/* Header */}
-                        <div className={cn("flex shrink-0 items-start justify-between gap-3 px-8 py-8", isReadingMode && "max-w-[75ch] mx-auto w-full")}>
-                            <div className="min-w-0">
-                                {!isReadingMode && <div className="text-[16px] text-neutral-400">Fragment</div>}
-                            </div>
-                            <div className="flex items-center gap-4">
-                                <button
-                                    onClick={() => setIsReadingMode(!isReadingMode)}
-                                    className="text-[13px] font-medium text-neutral-500 transition-colors hover:text-neutral-300 bg-neutral-900/40 hover:bg-neutral-800 rounded-md px-3 py-1.5"
-                                >
-                                    {isReadingMode ? "Exit Reading Mode" : "Reading Mode"}
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        setIsReadingMode(false);
-                                        select(null);
-                                    }}
-                                    className="text-neutral-500 transition-colors hover:text-neutral-300"
-                                    aria-label="Close"
-                                >
-                                    <X className="h-5 w-5" />
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Body scroll */}
-                        <div className="flex-1 flex flex-col overflow-y-auto px-8 pb-16 scrollbar-hide">
-                            <div className={cn(isReadingMode && "max-w-[65ch] mx-auto w-full mt-12")}>
-                                {/* Entry Content */}
-                                <div className={cn("mb-8", isReadingMode && "mb-16")}>
-                                    <div className={cn(
-                                        "whitespace-pre-wrap font-serif text-neutral-100 selection:bg-neutral-800",
-                                        isReadingMode ? "text-[26px] leading-[1.8]" : "text-[22px] leading-[1.4]"
-                                    )}>
-                                        {entry.text}
-                                    </div>
-                                    <div className={cn("mt-6 text-[13px] text-neutral-500", isReadingMode && "opacity-60")}>
-                                        {new Date(entry.createdAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })} at {new Date(entry.createdAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
-                                    </div>
+                        <motion.div
+                            className={cn(
+                                "absolute top-0 h-full flex flex-col transition-all duration-300",
+                                isReadingMode ? "inset-x-0 w-full bg-[var(--bg)]" : "right-0 w-[min(560px,92vw)] border-l border-neutral-900 bg-[var(--bg)] shadow-2xl"
+                            )}
+                            initial={{ x: 40, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            exit={{ x: 40, opacity: 0 }}
+                            transition={{ type: "spring", stiffness: 260, damping: 26 }}
+                        >
+                            {/* Header */}
+                            <div className={cn("flex shrink-0 items-start justify-between gap-3 px-8 py-8", isReadingMode && "max-w-[75ch] mx-auto w-full")}>
+                                <div className="min-w-0">
+                                    {!isReadingMode && <div className="text-[16px] text-neutral-400">Fragment</div>}
                                 </div>
+                                <div className="flex items-center gap-4">
+                                    <button
+                                        onClick={() => setShowDeleteConfirm(true)}
+                                        className="text-neutral-500 transition-colors hover:text-red-400 p-1.5 rounded-md hover:bg-red-500/10"
+                                        aria-label="Delete Entry"
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </button>
+                                    <button
+                                        onClick={() => setIsReadingMode(!isReadingMode)}
+                                        className="text-[13px] font-medium text-neutral-500 transition-colors hover:text-neutral-300 bg-neutral-900/40 hover:bg-neutral-800 rounded-md px-3 py-1.5"
+                                    >
+                                        {isReadingMode ? "Exit Reading Mode" : "Reading Mode"}
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setIsReadingMode(false);
+                                            select(null);
+                                        }}
+                                        className="text-neutral-500 transition-colors hover:text-neutral-300 ml-2"
+                                        aria-label="Close"
+                                    >
+                                        <X className="h-5 w-5" />
+                                    </button>
+                                </div>
+                            </div>
 
-                                {!isReadingMode && (
-                                    <>
-                                        <hr className="border-neutral-900/60 mb-8" />
+                            {/* Body scroll */}
+                            <div className="flex-1 flex flex-col overflow-y-auto px-8 pb-16 scrollbar-hide">
+                                <div className={cn(isReadingMode && "max-w-[65ch] mx-auto w-full mt-12")}>
+                                    {/* Entry Content */}
+                                    <div className={cn("mb-8", isReadingMode && "mb-16")}>
+                                        <div className={cn(
+                                            "whitespace-pre-wrap font-serif text-neutral-100 selection:bg-neutral-800",
+                                            isReadingMode ? "text-[26px] leading-[1.8]" : "text-[22px] leading-[1.4]"
+                                        )}>
+                                            {entry.text}
+                                        </div>
+                                        <div className={cn("mt-6 text-[13px] text-neutral-500", isReadingMode && "opacity-60")}>
+                                            {new Date(entry.createdAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })} at {new Date(entry.createdAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
+                                        </div>
+                                    </div>
 
-                                        {/* Analysis Card */}
-                                        {isOffline ? (
-                                            <div className="rounded-[20px] border border-neutral-900/60 bg-neutral-950/40 p-6 text-center shadow-sm">
-                                                <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-neutral-900/50">
-                                                    <div className="h-4 w-4 rounded-full bg-red-500/80" />
+                                    {!isReadingMode && (
+                                        <>
+                                            <hr className="border-neutral-900/60 mb-8" />
+
+                                            {/* Analysis Card */}
+                                            {isOffline ? (
+                                                <div className="rounded-[20px] border border-neutral-900/60 bg-neutral-950/40 p-6 text-center shadow-sm">
+                                                    <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-neutral-900/50">
+                                                        <div className="h-4 w-4 rounded-full bg-red-500/80" />
+                                                    </div>
+                                                    <h3 className="text-[15px] font-medium text-neutral-200">Local AI offline</h3>
+                                                    <p className="mt-2 text-[13px] text-neutral-500">
+                                                        Ensure Ollama is running (`ollama serve`).<br />Vaulta requires a local model to generate metadata.
+                                                    </p>
                                                 </div>
-                                                <h3 className="text-[15px] font-medium text-neutral-200">Local AI offline</h3>
-                                                <p className="mt-2 text-[13px] text-neutral-500">
-                                                    Ensure Ollama is running (`ollama serve`).<br />Vaulta requires a local model to generate metadata.
-                                                </p>
-                                            </div>
-                                        ) : (
-                                            <div className="flex flex-col">
-                                                {/* Header / Actions */}
-                                                <div className="mb-6">
-                                                    <div className="text-[16px] text-neutral-300">Analysis</div>
-                                                </div>
+                                            ) : (
+                                                <div className="flex flex-col">
+                                                    {/* Header / Actions */}
+                                                    <div className="mb-6">
+                                                        <div className="text-[16px] text-neutral-300">Analysis</div>
+                                                    </div>
 
-                                                <div className="flex items-center gap-3 mb-8">
-                                                    <div className="relative flex items-center flex-1">
-                                                        {modelsLoading ? (
-                                                            <span className="text-[13px] text-neutral-500">Loading models…</span>
-                                                        ) : models.length === 0 ? (
-                                                            <span className="text-[13px] text-red-500/80">Ollama models not found.</span>
-                                                        ) : (
-                                                            <div className="relative flex items-center w-full">
-                                                                <select
-                                                                    className="appearance-none w-full rounded-lg border border-neutral-800/60 bg-neutral-900/40 py-2.5 pl-4 pr-8 text-[13px] font-medium text-neutral-300 outline-none transition-colors hover:border-neutral-700 focus:border-neutral-500"
-                                                                    value={selectedModel || (models.length > 0 ? models[0] : "")}
-                                                                    onChange={(e) => setSelectedModel(e.target.value)}
-                                                                >
-                                                                    {models.map(m => <option key={m} value={m}>{m}</option>)}
-                                                                </select>
-                                                                <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-neutral-600">
-                                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                                                    <div className="flex items-center gap-3 mb-8">
+                                                        <div className="relative flex items-center flex-1">
+                                                            {modelsLoading ? (
+                                                                <span className="text-[13px] text-neutral-500">Loading models…</span>
+                                                            ) : models.length === 0 ? (
+                                                                <span className="text-[13px] text-red-500/80">Ollama models not found.</span>
+                                                            ) : (
+                                                                <div className="relative flex items-center w-full">
+                                                                    <select
+                                                                        className="appearance-none w-full rounded-lg border border-neutral-800/60 bg-neutral-900/40 py-2.5 pl-4 pr-8 text-[13px] font-medium text-neutral-300 outline-none transition-colors hover:border-neutral-700 focus:border-neutral-500"
+                                                                        value={selectedModel || (models.length > 0 ? models[0] : "")}
+                                                                        onChange={(e) => setSelectedModel(e.target.value)}
+                                                                    >
+                                                                        {models.map(m => <option key={m} value={m}>{m}</option>)}
+                                                                    </select>
+                                                                    <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-neutral-600">
+                                                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <button
+                                                            onClick={onAnalyze}
+                                                            disabled={busy || (!modelsLoading && models.length === 0) || success}
+                                                            className={cn(
+                                                                "flex items-center gap-2 rounded-lg px-5 py-2.5 text-[13px] font-medium transition-all shadow-sm",
+                                                                (busy || success || (!modelsLoading && models.length === 0)) ? "bg-neutral-800/50 text-neutral-500 border border-neutral-800/50" : "bg-neutral-800/80 text-neutral-200 hover:bg-neutral-700 border border-neutral-700/50",
+                                                                success && "bg-neutral-800/80 text-neutral-300"
+                                                            )}
+                                                        >
+                                                            {success ? <Check className="h-4 w-4" /> : busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                                                            {success ? "Done" : busy ? "Analyzing…" : "Analyze"}
+                                                        </button>
+                                                    </div>
+
+                                                    {err && (
+                                                        <div className="mx-4 mb-4 mt-2 rounded-xl bg-red-950/30 px-3 py-2.5 text-[13px] text-red-200/90 border border-red-900/30">
+                                                            {err}
+                                                        </div>
+                                                    )}
+
+                                                    {/* Metadata Display */}
+                                                    {entry.meta && (
+                                                        <div className="flex flex-col gap-4">
+                                                            {/* Themes Chips */}
+                                                            {entry.meta.themes && entry.meta.themes.length > 0 && (
+                                                                <div className="flex flex-wrap gap-2">
+                                                                    {entry.meta.themes.map((t) => (
+                                                                        <span key={t} className="rounded-full border border-neutral-800 bg-neutral-900/20 px-3 py-1 text-[12px] text-neutral-400">
+                                                                            {t}
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+
+                                                            {/* Tone / Type Box */}
+                                                            <div className="rounded-xl border border-neutral-800/60 bg-neutral-900/30 p-5 flex flex-col gap-3">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-[13px] font-medium text-neutral-300 w-12">Tone</span>
+                                                                    <span className="text-[14px] text-neutral-400">{entry.meta.tone}</span>
+                                                                </div>
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-[13px] font-medium text-neutral-300 w-12">Type</span>
+                                                                    <span className="text-[14px] text-neutral-400">{entry.meta.type}</span>
                                                                 </div>
                                                             </div>
-                                                        )}
-                                                    </div>
-                                                    <button
-                                                        onClick={onAnalyze}
-                                                        disabled={busy || (!modelsLoading && models.length === 0) || success}
-                                                        className={cn(
-                                                            "flex items-center gap-2 rounded-lg px-5 py-2.5 text-[13px] font-medium transition-all shadow-sm",
-                                                            (busy || success || (!modelsLoading && models.length === 0)) ? "bg-neutral-800/50 text-neutral-500 border border-neutral-800/50" : "bg-neutral-800/80 text-neutral-200 hover:bg-neutral-700 border border-neutral-700/50",
-                                                            success && "bg-neutral-800/80 text-neutral-300"
-                                                        )}
-                                                    >
-                                                        {success ? <Check className="h-4 w-4" /> : busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                                                        {success ? "Done" : busy ? "Analyzing…" : "Analyze"}
-                                                    </button>
+
+                                                            {/* Summary Box */}
+                                                            <div className="rounded-xl border border-neutral-800/60 bg-neutral-900/30 p-5 mt-2">
+                                                                <div className="text-[13px] font-medium text-neutral-300 mb-2">Summary</div>
+                                                                <div className="text-[14px] leading-relaxed text-neutral-400">{entry.meta.summary}</div>
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                 </div>
+                                            )}
+                                        </>
+                                    )}
+                                </div>
 
-                                                {err && (
-                                                    <div className="mx-4 mb-4 mt-2 rounded-xl bg-red-950/30 px-3 py-2.5 text-[13px] text-red-200/90 border border-red-900/30">
-                                                        {err}
-                                                    </div>
-                                                )}
+                                {isReadingMode && (
+                                    <div className="mt-16 flex items-center justify-between border-t border-neutral-900/60 pt-8 text-[13px] font-medium text-neutral-500 max-w-[65ch] mx-auto w-full">
+                                        <button
+                                            onClick={() => {
+                                                const idx = filteredEntries.findIndex(e => e.id === selectedId);
+                                                if (idx > 0) select(filteredEntries[idx - 1].id);
+                                            }}
+                                            disabled={filteredEntries.findIndex(e => e.id === selectedId) <= 0}
+                                            className="transition-colors hover:text-neutral-300 disabled:opacity-30 disabled:hover:text-neutral-500"
+                                        >
+                                            ← Previous
+                                        </button>
 
-                                                {/* Metadata Display */}
-                                                {entry.meta && (
-                                                    <div className="flex flex-col gap-4">
-                                                        {/* Themes Chips */}
-                                                        {entry.meta.themes && entry.meta.themes.length > 0 && (
-                                                            <div className="flex flex-wrap gap-2">
-                                                                {entry.meta.themes.map((t) => (
-                                                                    <span key={t} className="rounded-full border border-neutral-800 bg-neutral-900/20 px-3 py-1 text-[12px] text-neutral-400">
-                                                                        {t}
-                                                                    </span>
-                                                                ))}
-                                                            </div>
-                                                        )}
+                                        <div className="text-neutral-700">press <span className="text-neutral-500">space</span> to continue</div>
 
-                                                        {/* Tone / Type Box */}
-                                                        <div className="rounded-xl border border-neutral-800/60 bg-neutral-900/30 p-5 flex flex-col gap-3">
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="text-[13px] font-medium text-neutral-300 w-12">Tone</span>
-                                                                <span className="text-[14px] text-neutral-400">{entry.meta.tone}</span>
-                                                            </div>
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="text-[13px] font-medium text-neutral-300 w-12">Type</span>
-                                                                <span className="text-[14px] text-neutral-400">{entry.meta.type}</span>
-                                                            </div>
-                                                        </div>
-
-                                                        {/* Summary Box */}
-                                                        <div className="rounded-xl border border-neutral-800/60 bg-neutral-900/30 p-5 mt-2">
-                                                            <div className="text-[13px] font-medium text-neutral-300 mb-2">Summary</div>
-                                                            <div className="text-[14px] leading-relaxed text-neutral-400">{entry.meta.summary}</div>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
-                                    </>
+                                        <button
+                                            onClick={() => {
+                                                const idx = filteredEntries.findIndex(e => e.id === selectedId);
+                                                if (idx < filteredEntries.length - 1) select(filteredEntries[idx + 1].id);
+                                            }}
+                                            disabled={filteredEntries.findIndex(e => e.id === selectedId) >= filteredEntries.length - 1}
+                                            className="transition-colors hover:text-neutral-300 disabled:opacity-30 disabled:hover:text-neutral-500"
+                                        >
+                                            Next →
+                                        </button>
+                                    </div>
                                 )}
                             </div>
-
-                            {isReadingMode && (
-                                <div className="mt-16 flex items-center justify-between border-t border-neutral-900/60 pt-8 text-[13px] font-medium text-neutral-500 max-w-[65ch] mx-auto w-full">
-                                    <button
-                                        onClick={() => {
-                                            const idx = filteredEntries.findIndex(e => e.id === selectedId);
-                                            if (idx > 0) select(filteredEntries[idx - 1].id);
-                                        }}
-                                        disabled={filteredEntries.findIndex(e => e.id === selectedId) <= 0}
-                                        className="transition-colors hover:text-neutral-300 disabled:opacity-30 disabled:hover:text-neutral-500"
-                                    >
-                                        ← Previous
-                                    </button>
-
-                                    <div className="text-neutral-700">press <span className="text-neutral-500">space</span> to continue</div>
-
-                                    <button
-                                        onClick={() => {
-                                            const idx = filteredEntries.findIndex(e => e.id === selectedId);
-                                            if (idx < filteredEntries.length - 1) select(filteredEntries[idx + 1].id);
-                                        }}
-                                        disabled={filteredEntries.findIndex(e => e.id === selectedId) >= filteredEntries.length - 1}
-                                        className="transition-colors hover:text-neutral-300 disabled:opacity-30 disabled:hover:text-neutral-500"
-                                    >
-                                        Next →
-                                    </button>
-                                </div>
-                            )}
-                        </div>
+                        </motion.div>
                     </motion.div>
-                </motion.div>
-            )}
-        </AnimatePresence>
+                )}
+            </AnimatePresence>
+
+            <ConfirmDialog
+                isOpen={showDeleteConfirm}
+                title="Delete fragment?"
+                description="This will permanently drop it from this device. Once deleted, this local operation cannot be reversed."
+                confirmText="Delete permanently"
+                onConfirm={() => {
+                    if (selectedId) remove(selectedId);
+                    setShowDeleteConfirm(false);
+                }}
+                onCancel={() => setShowDeleteConfirm(false)}
+            />
+        </>
     );
 }

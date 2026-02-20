@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { type Entry, addEntry, listEntriesNewestFirst, updateEntry } from "../../data/db";
+import { type Entry, addEntry, listEntriesNewestFirst, updateEntry, deleteEntry } from "../../data/db";
 
 type DateFilter = "any" | "7d" | "30d" | "year";
 
@@ -18,6 +18,7 @@ type EntriesState = {
     select: (id: string | null) => void;
     create: (text: string) => Promise<Entry>;
     setMeta: (id: string, meta: Entry["meta"]) => Promise<void>;
+    remove: (id: string) => Promise<void>;
 
     setSearchQuery: (q: string) => void;
     setTypeFilter: (types: string[]) => void;
@@ -76,6 +77,15 @@ export const useEntriesStore = create<EntriesState>((set, get) => ({
         await updateEntry(updated);
         set({
             entries: get().entries.map((e) => (e.id === id ? updated : e))
+        });
+    },
+
+    remove: async (id) => {
+        await deleteEntry(id);
+        const currentSelectedId = get().selectedId;
+        set({
+            entries: get().entries.filter(e => e.id !== id),
+            selectedId: currentSelectedId === id ? null : currentSelectedId
         });
     }
 }));

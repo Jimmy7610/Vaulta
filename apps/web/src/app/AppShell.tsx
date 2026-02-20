@@ -1,5 +1,5 @@
-import { Search, MoreHorizontal } from "lucide-react";
-import { useEffect } from "react";
+import { Search, PenLine, Sparkles, MoreHorizontal, FileText, Check, Trash2 } from "lucide-react";
+import { useEffect, useState, useMemo } from "react";
 import { useUIStore } from "./store";
 import { QuickCaptureModal } from "../components/QuickCaptureModal";
 import { useEntriesStore, useFilteredEntries } from "../features/entries/store";
@@ -7,7 +7,7 @@ import { EntryDetail } from "../components/EntryDetail";
 import { ReflectionPanel } from "../components/ReflectionPanel";
 import { Toast } from "../components/Toast";
 import { cn } from "../lib/cn";
-import { useMemo } from "react";
+import { ConfirmDialog } from "../components/ConfirmDialog";
 
 function snippet(text: string) {
   const s = text.trim().replace(/\s+/g, " ");
@@ -23,7 +23,8 @@ export function AppShell() {
     typeFilter, setTypeFilter,
     themeFilter, setThemeFilter,
     dateFilter, setDateFilter,
-    clearFilters
+    clearFilters,
+    remove
   } = useEntriesStore();
 
   const filteredEntries = useFilteredEntries();
@@ -44,6 +45,9 @@ export function AppShell() {
     load();
   }, [load]);
 
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  const [entryToDelete, setEntryToDelete] = useState<string | null>(null);
+
   // Sync to URL on mount
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -62,7 +66,7 @@ export function AppShell() {
     if (dateFilter !== "any") params.set("date", dateFilter);
 
     const qs = params.toString();
-    const url = qs ? `?${qs}` : window.location.pathname;
+    const url = qs ? `? ${qs} ` : window.location.pathname;
     window.history.replaceState({}, "", url);
   }, [searchQuery, typeFilter, themeFilter, dateFilter]);
 
@@ -207,47 +211,99 @@ export function AppShell() {
         ) : (
           <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filteredEntries.map((e) => (
-              <button
-                key={e.id}
-                onClick={() => select(e.id)}
-                className={cn(
-                  "group relative flex flex-col items-start text-left w-full h-full cursor-pointer",
-                  "rounded-[20px] border border-neutral-900/60 bg-neutral-950/40 p-5",
-                  "shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:border-neutral-800 hover:shadow-lg hover:shadow-black/60 hover:bg-neutral-900/40"
-                )}
-              >
-                <div className="flex w-full items-start justify-between mb-4">
-                  <div className="rounded-md bg-neutral-800/50 px-2 py-0.5 text-[11px] font-medium text-neutral-400">
-                    {e.meta?.type ?? "unfiled"}
-                  </div>
-                  <MoreHorizontal className="h-4 w-4 text-neutral-500" />
-                </div>
-
-                <div className="mb-5 line-clamp-3 text-[18px] leading-[1.4] text-neutral-200 font-serif">
-                  {snippet(e.text)}
-                </div>
-
-                <div className="mt-auto pt-2 w-full">
-                  {e.meta?.themes && e.meta.themes.length > 0 && (
-                    <div className="mb-3 flex flex-wrap gap-1.5">
-                      {e.meta.themes.slice(0, 3).map((t) => (
-                        <span key={t} className="rounded-full border border-neutral-800 bg-neutral-900/20 px-2.5 py-0.5 text-[11px] font-medium text-neutral-500">
-                          {t}
-                        </span>
-                      ))}
-                    </div>
+              <div key={e.id} className="relative w-full h-full">
+                <button
+                  onClick={() => select(e.id)}
+                  className={cn(
+                    "group relative flex flex-col items-start text-left w-full h-full cursor-pointer",
+                    "rounded-[20px] border border-neutral-900/60 bg-neutral-950/40 p-5",
+                    "shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:border-neutral-800 hover:shadow-lg hover:shadow-black/60 hover:bg-neutral-900/40"
                   )}
-                  <div className="text-[11px] font-medium text-neutral-600">
-                    {new Date(e.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                >
+                  <div className="flex w-full items-start justify-between mb-4">
+                    <div className="rounded-md bg-neutral-800/50 px-2 py-0.5 text-[11px] font-medium text-neutral-400">
+                      {e.meta?.type ?? "unfiled"}
+                    </div>
                   </div>
+
+                  <div className="mb-5 line-clamp-3 text-[18px] leading-[1.4] text-neutral-200 font-serif">
+                    {snippet(e.text)}
+                  </div>
+
+                  <div className="mt-auto pt-2 w-full">
+                    {e.meta?.themes && e.meta.themes.length > 0 && (
+                      <div className="mb-3 flex flex-wrap gap-1.5">
+                        {e.meta.themes.slice(0, 3).map((t) => (
+                          <span key={t} className="rounded-full border border-neutral-800 bg-neutral-900/20 px-2.5 py-0.5 text-[11px] font-medium text-neutral-500">
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <div className="text-[11px] font-medium text-neutral-600">
+                      {new Date(e.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </div>
+                  </div>
+                </button>
+
+                {/* Kebab Menu Trigger */}
+                <div className="absolute top-5 right-5 z-10">
+                  <button
+                    onClick={(evt) => {
+                      evt.stopPropagation();
+                      setMenuOpenId(menuOpenId === e.id ? null : e.id);
+                    }}
+                    className="p-1 rounded-md text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800/80 transition-colors"
+                  >
+                    <MoreHorizontal className="h-4 w-4" />
+                  </button>
+
+                  {/* Dropdown Panel */}
+                  {menuOpenId === e.id && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-10 cursor-default"
+                        onClick={(evt) => {
+                          evt.stopPropagation();
+                          setMenuOpenId(null);
+                        }}
+                      />
+                      <div className="absolute right-0 top-full mt-1 z-20 w-36 rounded-xl border border-neutral-800 bg-neutral-900/95 py-1.5 shadow-xl backdrop-blur-md">
+                        <button
+                          onClick={(evt) => {
+                            evt.stopPropagation();
+                            setMenuOpenId(null);
+                            setEntryToDelete(e.id);
+                          }}
+                          className="flex w-full items-center gap-2 px-3 py-2 text-[13px] font-medium text-red-400/90 transition-colors hover:bg-neutral-800/60 hover:text-red-300"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          Delete
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
-              </button>
+              </div>
             ))}
           </div>
         )}
       </main>
 
       <QuickCaptureModal />
+
+      <ConfirmDialog
+        isOpen={!!entryToDelete}
+        title="Delete fragment?"
+        description="This will permanently drop it from this device. Once deleted, this local operation cannot be reversed."
+        confirmText="Delete permanently"
+        onConfirm={() => {
+          if (entryToDelete) remove(entryToDelete);
+          setEntryToDelete(null);
+        }}
+        onCancel={() => setEntryToDelete(null)}
+      />
+
       <EntryDetail />
       <Toast />
     </div>
