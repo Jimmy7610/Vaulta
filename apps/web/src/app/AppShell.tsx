@@ -2,10 +2,11 @@ import { Search, Video, MoreHorizontal, Menu } from "lucide-react";
 import { useEffect } from "react";
 import { useUIStore } from "./store";
 import { QuickCaptureModal } from "../components/QuickCaptureModal";
-import { useEntriesStore } from "../features/entries/store";
+import { useEntriesStore, useFilteredEntries } from "../features/entries/store";
 import { EntryDetail } from "../components/EntryDetail";
 import { Toast } from "../components/Toast";
 import { cn } from "../lib/cn";
+import { useMemo } from "react";
 
 function snippet(text: string) {
   const s = text.trim().replace(/\s+/g, " ");
@@ -15,11 +16,54 @@ function snippet(text: string) {
 export function AppShell() {
   const openQuickCapture = useUIStore((s) => s.openQuickCapture);
   const closeQuickCapture = useUIStore((s) => s.closeQuickCapture);
-  const { entries, load, select, loading, error, selectedId } = useEntriesStore();
+  const {
+    entries, load, select, loading, error, selectedId,
+    searchQuery, setSearchQuery,
+    typeFilter, setTypeFilter,
+    themeFilter, setThemeFilter,
+    dateFilter, setDateFilter,
+    clearFilters
+  } = useEntriesStore();
+
+  const filteredEntries = useFilteredEntries();
+
+  const availableTypes = useMemo(() => {
+    const types = new Set<string>();
+    entries.forEach(e => types.add(e.meta?.type ?? "unfiled"));
+    return Array.from(types).sort();
+  }, [entries]);
+
+  const availableThemes = useMemo(() => {
+    const themes = new Set<string>();
+    entries.forEach(e => e.meta?.themes?.forEach(t => themes.add(t)));
+    return Array.from(themes).sort();
+  }, [entries]);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  // Sync to URL on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get("q"); if (q) setSearchQuery(q);
+    const types = params.getAll("type"); if (types.length) setTypeFilter(types);
+    const themes = params.getAll("theme"); if (themes.length) setThemeFilter(themes);
+    const df = params.get("date") as any; if (df) setDateFilter(df);
+  }, []); // eslint-disable-line
+
+  // Sync back to URL
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (searchQuery) params.set("q", searchQuery);
+    typeFilter.forEach(t => params.append("type", t));
+    themeFilter.forEach(t => params.append("theme", t));
+    if (dateFilter !== "any") params.set("date", dateFilter);
+
+    const qs = params.toString();
+    const url = qs ? `?${qs}` : window.location.pathname;
+    window.history.replaceState({}, "", url);
+  }, [searchQuery, typeFilter, themeFilter, dateFilter]);
 
   // Global Keyboard Shortcuts
   useEffect(() => {
@@ -83,9 +127,71 @@ export function AppShell() {
       <main className="mx-auto max-w-[1200px] px-6 py-12">
         <div className="mb-12">
           <h1 className="text-[42px] leading-tight text-neutral-100 font-serif">Fragments, safely held.</h1>
-          <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-neutral-400 font-serif italic">
+          <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-neutral-400 font-serif italic mb-8">
             Vaulta is local-first. You capture quickly, the system connects the dots later.
           </p>
+
+          {/* Search + Filters Bar */}
+          <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center w-full max-w-4xl">
+            <div className="relative flex-1 min-w-[240px]">
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500">
+                <Search className="h-4 w-4" />
+              </div>
+              <input
+                type="text"
+                placeholder="Search fragments..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full rounded-xl border border-neutral-800/80 bg-neutral-900/40 py-2 pl-9 pr-4 text-[14px] text-neutral-200 outline-none transition-colors placeholder:text-neutral-600 focus:border-neutral-600 focus:bg-neutral-900"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2 sm:pb-0 w-full sm:w-auto">
+              <select
+                className="appearance-none rounded-lg border border-neutral-800/80 bg-neutral-900/40 px-3 py-2 text-[13px] font-medium text-neutral-300 outline-none hover:bg-neutral-800"
+                value={typeFilter.length ? typeFilter[0] : ""}
+                onChange={(e) => setTypeFilter(e.target.value ? [e.target.value] : [])}
+              >
+                <option value="">All Types</option>
+                {availableTypes.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+
+              <select
+                className="appearance-none rounded-lg border border-neutral-800/80 bg-neutral-900/40 px-3 py-2 text-[13px] font-medium text-neutral-300 outline-none hover:bg-neutral-800"
+                value={themeFilter.length ? themeFilter[0] : ""}
+                onChange={(e) => setThemeFilter(e.target.value ? [e.target.value] : [])}
+              >
+                <option value="">All Themes</option>
+                {availableThemes.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+
+              <select
+                className="appearance-none rounded-lg border border-neutral-800/80 bg-neutral-900/40 px-3 py-2 text-[13px] font-medium text-neutral-300 outline-none hover:bg-neutral-800"
+                value={dateFilter}
+                onChange={(e: any) => setDateFilter(e.target.value)}
+              >
+                <option value="any">Any Time</option>
+                <option value="7d">Last 7 days</option>
+                <option value="30d">Last 30 days</option>
+                <option value="year">This year</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Active Filters Summary */}
+          {(searchQuery || typeFilter.length > 0 || themeFilter.length > 0 || dateFilter !== "any") && (
+            <div className="mt-4 flex items-center justify-between">
+              <div className="text-[13px] text-neutral-500">
+                Found {filteredEntries.length} {filteredEntries.length === 1 ? 'result' : 'results'}
+              </div>
+              <button
+                onClick={clearFilters}
+                className="text-[13px] font-medium text-neutral-400 hover:text-neutral-200 transition-colors"
+              >
+                Clear filters
+              </button>
+            </div>
+          )}
         </div>
 
         {error && (
@@ -103,9 +209,19 @@ export function AppShell() {
               Hit <span className="text-neutral-200">Capture</span> and drop the first fragment.
             </div>
           </div>
+        ) : filteredEntries.length === 0 ? (
+          <div className="rounded-2xl border border-neutral-900 bg-neutral-950 p-8 text-center max-w-2xl mx-auto">
+            <div className="text-[15px] text-neutral-400 mb-4">No fragments match your current search and filters.</div>
+            <button
+              onClick={clearFilters}
+              className="rounded-lg bg-neutral-800 px-4 py-2 text-[13px] font-medium text-neutral-200 hover:bg-neutral-700 transition-colors"
+            >
+              Clear all filters
+            </button>
+          </div>
         ) : (
           <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {entries.map((e) => (
+            {filteredEntries.map((e) => (
               <button
                 key={e.id}
                 onClick={() => select(e.id)}
