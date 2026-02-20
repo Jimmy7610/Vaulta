@@ -88,3 +88,16 @@ export function buildGraph(entries: Entry[]): { nodes: GraphNode[]; links: Graph
 
     return { nodes, links: finalLinks };
 }
+
+export function getThemeCounts(entries: Entry[]): { theme: string; count: number }[] {
+    const counts = new Map<string, number>();
+    for (const e of entries) {
+        if (!e.meta?.themes) continue;
+        for (const t of e.meta.themes) {
+            counts.set(t, (counts.get(t) || 0) + 1);
+        }
+    }
+    return Array.from(counts.entries())
+        .map(([theme, count]) => ({ theme, count }))
+        .sort((a, b) => b.count - a.count || a.theme.localeCompare(b.theme));
+}

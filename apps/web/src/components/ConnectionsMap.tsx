@@ -3,7 +3,8 @@ import ForceGraph2D from "react-force-graph-2d";
 import { useEntriesStore, useFilteredEntries } from "../features/entries/store";
 import { buildGraph } from "../features/entries/graph";
 import { cn } from "../lib/cn";
-import { Filter, Zap, LayoutGrid } from "lucide-react";
+import { Zap, LayoutGrid } from "lucide-react";
+import { MapThemePicker } from "./MapThemePicker";
 
 export function ConnectionsMap() {
     const { select, mapTheme, setMapTheme, focusMode, setFocusMode, showUnclustered, setShowUnclustered } = useEntriesStore();
@@ -13,13 +14,6 @@ export function ConnectionsMap() {
     const containerRef = useRef<HTMLDivElement>(null);
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
     const [hoverNode, setHoverNode] = useState<any>(null);
-
-    // Extract available themes for the dropdown
-    const availableThemes = useMemo(() => {
-        const themes = new Set<string>();
-        entries.forEach(e => e.meta?.themes?.forEach(t => themes.add(t)));
-        return Array.from(themes).sort();
-    }, [entries]);
 
     // Derive graph nodes and links locally from filtered entries + map filter toggles
     const graphData = useMemo(() => {
@@ -69,13 +63,15 @@ export function ConnectionsMap() {
         return () => resizeObserver.disconnect();
     }, []);
 
-    // Re-center graph on load
+    // Re-center graph on load OR theme change
     useEffect(() => {
         if (graphRef.current && graphData.nodes.length > 0) {
-            graphRef.current.d3Force('charge')?.strength(-120);
-            graphRef.current.zoomToFit(400, 50);
+            graphRef.current.d3Force('charge')?.strength(-160); // slightly stronger repulsion to space out larger nodes
+            setTimeout(() => {
+                if (graphRef.current) graphRef.current.zoomToFit(600, 80);
+            }, 50); // small delay ensures nodes are somewhat settled before zoom calc
         }
-    }, [graphData]);
+    }, [graphData, mapTheme]);
 
     if (graphData.nodes.length < 2 || graphData.links.length === 0) {
         return (
@@ -101,21 +97,18 @@ export function ConnectionsMap() {
     }
 
     return (
-        <div ref={containerRef} className="w-full h-full relative group">
-            {/* Minimal Map UI Controls */}
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3 rounded-2xl border border-neutral-800/80 bg-neutral-900/80 backdrop-blur-md px-4 py-2 shadow-sm transition-opacity opacity-100 md:group-hover:opacity-100">
+        <div ref={containerRef} className="w-full h-full relative group flex flex-col items-center">
 
-                <div className="flex items-center gap-2">
-                    <Filter className="h-3.5 w-3.5 text-neutral-500" />
-                    <select
-                        className="appearance-none bg-transparent py-1 pr-6 text-[13px] font-medium text-neutral-300 outline-none hover:text-neutral-200"
-                        value={mapTheme}
-                        onChange={(e) => setMapTheme(e.target.value)}
-                    >
-                        <option value="">All Map Themes</option>
-                        {availableThemes.map(t => <option key={t} value={t}>{t}</option>)}
-                    </select>
-                </div>
+            {/* Subtle Context Label */}
+            <div className="absolute top-10 pointer-events-none z-0 flex flex-col items-center opacity-40">
+                <div className="text-[20px] font-serif text-neutral-300">Connections Map</div>
+                <div className="text-[12px] italic font-serif text-neutral-500 mt-1 tracking-wide">Fragments linked by shared themes.</div>
+            </div>
+
+            {/* Minimal Map UI Controls */}
+            <div className="absolute top-4 z-10 flex items-center gap-3 rounded-2xl border border-neutral-800/80 bg-neutral-900/80 backdrop-blur-md px-4 py-2 shadow-sm transition-opacity opacity-100 md:group-hover:opacity-100">
+
+                <MapThemePicker />
 
                 <div className="w-px h-4 bg-neutral-800"></div>
 
@@ -154,14 +147,14 @@ export function ConnectionsMap() {
                     nodeVal={(n: any) => n.val}
                     nodeColor={(node: any) => {
                         if (focusMode && hoverNode && !highlightNodes.has(node.id)) return "rgba(82,82,82,0.15)";
-                        return "#525252";
+                        return "#737373"; // brighter base node color (neutral-500)
                     }}
                     linkColor={(link: any) => {
                         if (focusMode && hoverNode && !highlightLinks.has(link)) return "rgba(38,38,38,0.15)";
-                        if (hoverNode && highlightLinks.has(link)) return "rgba(115,115,115,0.6)"; // highlighted link color
-                        return "#262626";
+                        if (hoverNode && highlightLinks.has(link)) return "rgba(163,163,163,0.7)"; // highlighted link color
+                        return "rgba(64,64,64,0.5)"; // brighter standard link wireframe
                     }}
-                    linkWidth={(l: any) => Math.min(3, 0.5 + l.value * 0.5)}
+                    linkWidth={(l: any) => Math.min(4, 0.8 + l.value * 0.6)} // slightly thicker
                     onNodeHover={(n: any) => setHoverNode(n || null)}
                     onNodeClick={(n: any) => select(n.id)}
                     nodeLabel={(n: any) => `<div style="padding:4px; border-radius:4px; max-width:260px; word-wrap:break-word; font-family:'Playfair Display',serif; font-size:13px; color:#e5e5e5; background:rgba(10,10,10,0.9); border:1px solid rgba(38,38,38,0.8);">${n.label}<br/><div style="margin-top:6px;font-size:11px;color:#737373">${n.themes.join(' • ')}</div></div>`}
@@ -175,7 +168,7 @@ export function ConnectionsMap() {
                             bckgDimensions[1]
                         );
                         ctx.beginPath();
-                        ctx.arc(node.x as number, node.y as number, 4, 0, 2 * Math.PI, false);
+                        ctx.arc(node.x as number, node.y as number, 6, 0, 2 * Math.PI, false);
                         ctx.fill();
                     }}
                     nodeCanvasObject={(node: any, ctx, globalScale) => {
@@ -201,13 +194,21 @@ export function ConnectionsMap() {
                         ctx.fillStyle = '#a3a3a3'; // neutral-400 equivalent
                         ctx.fillText(label, node.x, node.y + 8);
 
+                        // Subtle Glow
+                        if (!isDimmed) {
+                            ctx.shadowColor = "rgba(163,163,163,0.15)";
+                            ctx.shadowBlur = 10;
+                        }
+
                         // Node dot itself
                         ctx.beginPath();
-                        ctx.arc(node.x, node.y, 4, 0, 2 * Math.PI, false);
-                        ctx.fillStyle = isDimmed ? "rgba(82, 82, 82, 0.4)" : "#525252";
+                        ctx.arc(node.x, node.y, 6, 0, 2 * Math.PI, false);
+                        ctx.fillStyle = isDimmed ? "rgba(82, 82, 82, 0.4)" : "#737373";
                         ctx.fill();
 
-                        ctx.globalAlpha = 1.0; // reset
+                        // Reset context properties
+                        ctx.shadowBlur = 0;
+                        ctx.globalAlpha = 1.0;
                     }}
                 />
             )}
