@@ -26,6 +26,9 @@ export function AppShell() {
     themeFilter, setThemeFilter,
     dateFilter, setDateFilter,
     viewMode, setViewMode,
+    mapTheme, setMapTheme,
+    focusMode, setFocusMode,
+    showUnclustered, setShowUnclustered,
     clearFilters
   } = useEntriesStore();
 
@@ -55,6 +58,9 @@ export function AppShell() {
     const themes = params.getAll("theme"); if (themes.length) setThemeFilter(themes);
     const df = params.get("date") as any; if (df) setDateFilter(df);
     const view = params.get("view") as any; if (view === "vault" || view === "map") setViewMode(view);
+    const mTheme = params.get("mapTheme"); if (mTheme) setMapTheme(mTheme);
+    const focus = params.get("focus"); setFocusMode(focus === "1");
+    const uncl = params.get("unclustered"); setShowUnclustered(uncl !== "0"); // default true
   }, []); // eslint-disable-line
 
   // Sync back to URL
@@ -64,11 +70,15 @@ export function AppShell() {
     typeFilter.forEach(t => params.append("type", t));
     themeFilter.forEach(t => params.append("theme", t));
     if (dateFilter !== "any") params.set("date", dateFilter);
+    if (viewMode !== "vault") params.set("view", viewMode);
+    if (mapTheme) params.set("mapTheme", mapTheme);
+    if (focusMode) params.set("focus", "1");
+    if (!showUnclustered) params.set("unclustered", "0");
 
     const qs = params.toString();
     const url = qs ? `?${qs}` : window.location.pathname;
     window.history.replaceState({}, "", url);
-  }, [searchQuery, typeFilter, themeFilter, dateFilter, viewMode]);
+  }, [searchQuery, typeFilter, themeFilter, dateFilter, viewMode, mapTheme, focusMode, showUnclustered]);
 
   // Global Keyboard Shortcuts
   useEffect(() => {
@@ -155,80 +165,80 @@ export function AppShell() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1200px] px-6 py-12">
-        <div className="mb-12">
-          <h1 className="text-[42px] leading-tight text-neutral-100 font-serif">Fragments, safely held.</h1>
-          <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-neutral-400 font-serif italic mb-8">
-            Vaulta is local-first. You capture quickly, the system connects the dots later.
-          </p>
-
-          {/* Search + Filters Bar */}
-          <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center w-full max-w-4xl">
-            <div className="relative flex-1 min-w-[240px]">
-              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500">
-                <Search className="h-4 w-4" />
-              </div>
-              <input
-                type="text"
-                placeholder="Search fragments..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-xl border border-neutral-800/80 bg-neutral-900/40 py-2 pl-9 pr-4 text-[14px] text-neutral-200 outline-none transition-colors placeholder:text-neutral-600 focus:border-neutral-600 focus:bg-neutral-900"
-              />
-            </div>
-
-            <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2 sm:pb-0 w-full sm:w-auto">
-              <select
-                className="appearance-none rounded-lg border border-neutral-800/80 bg-neutral-900/40 px-3 py-2 text-[13px] font-medium text-neutral-300 outline-none hover:bg-neutral-800"
-                value={typeFilter.length ? typeFilter[0] : ""}
-                onChange={(e) => setTypeFilter(e.target.value ? [e.target.value] : [])}
-              >
-                <option value="">All Types</option>
-                {availableTypes.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
-
-              <select
-                className="appearance-none rounded-lg border border-neutral-800/80 bg-neutral-900/40 px-3 py-2 text-[13px] font-medium text-neutral-300 outline-none hover:bg-neutral-800"
-                value={themeFilter.length ? themeFilter[0] : ""}
-                onChange={(e) => setThemeFilter(e.target.value ? [e.target.value] : [])}
-              >
-                <option value="">All Themes</option>
-                {availableThemes.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
-
-              <select
-                className="appearance-none rounded-lg border border-neutral-800/80 bg-neutral-900/40 px-3 py-2 text-[13px] font-medium text-neutral-300 outline-none hover:bg-neutral-800"
-                value={dateFilter}
-                onChange={(e: any) => setDateFilter(e.target.value)}
-              >
-                <option value="any">Any Time</option>
-                <option value="7d">Last 7 days</option>
-                <option value="30d">Last 30 days</option>
-                <option value="year">This year</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Active Filters Summary */}
-          {(searchQuery || typeFilter.length > 0 || themeFilter.length > 0 || dateFilter !== "any") && (
-            <div className="mt-4 flex items-center justify-between">
-              <div className="text-[13px] text-neutral-500">
-                Found {filteredEntries.length} {filteredEntries.length === 1 ? 'result' : 'results'}
-              </div>
-              <button
-                onClick={clearFilters}
-                className="text-[13px] font-medium text-neutral-400 hover:text-neutral-200 transition-colors"
-              >
-                Clear filters
-              </button>
-            </div>
-          )}
-        </div>
-
+      <main className={cn("mx-auto w-full", viewMode === "map" ? "h-[calc(100vh-80px)]" : "max-w-[1200px] px-6 py-12")}>
         {viewMode === "map" ? (
           <ConnectionsMap />
         ) : (
           <>
+            <div className="mb-12">
+              <h1 className="text-[42px] leading-tight text-neutral-100 font-serif">Fragments, safely held.</h1>
+              <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-neutral-400 font-serif italic mb-8">
+                Vaulta is local-first. You capture quickly, the system connects the dots later.
+              </p>
+
+              {/* Search + Filters Bar */}
+              <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center w-full max-w-4xl">
+                <div className="relative flex-1 min-w-[240px]">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500">
+                    <Search className="h-4 w-4" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Search fragments..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full rounded-xl border border-neutral-800/80 bg-neutral-900/40 py-2 pl-9 pr-4 text-[14px] text-neutral-200 outline-none transition-colors placeholder:text-neutral-600 focus:border-neutral-600 focus:bg-neutral-900"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2 sm:pb-0 w-full sm:w-auto">
+                  <select
+                    className="appearance-none rounded-lg border border-neutral-800/80 bg-neutral-900/40 px-3 py-2 text-[13px] font-medium text-neutral-300 outline-none hover:bg-neutral-800"
+                    value={typeFilter.length ? typeFilter[0] : ""}
+                    onChange={(e) => setTypeFilter(e.target.value ? [e.target.value] : [])}
+                  >
+                    <option value="">All Types</option>
+                    {availableTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+
+                  <select
+                    className="appearance-none rounded-lg border border-neutral-800/80 bg-neutral-900/40 px-3 py-2 text-[13px] font-medium text-neutral-300 outline-none hover:bg-neutral-800"
+                    value={themeFilter.length ? themeFilter[0] : ""}
+                    onChange={(e) => setThemeFilter(e.target.value ? [e.target.value] : [])}
+                  >
+                    <option value="">All Themes</option>
+                    {availableThemes.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+
+                  <select
+                    className="appearance-none rounded-lg border border-neutral-800/80 bg-neutral-900/40 px-3 py-2 text-[13px] font-medium text-neutral-300 outline-none hover:bg-neutral-800"
+                    value={dateFilter}
+                    onChange={(e: any) => setDateFilter(e.target.value)}
+                  >
+                    <option value="any">Any Time</option>
+                    <option value="7d">Last 7 days</option>
+                    <option value="30d">Last 30 days</option>
+                    <option value="year">This year</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Active Filters Summary */}
+              {(searchQuery || typeFilter.length > 0 || themeFilter.length > 0 || dateFilter !== "any") && (
+                <div className="mt-4 flex items-center justify-between">
+                  <div className="text-[13px] text-neutral-500">
+                    Found {filteredEntries.length} {filteredEntries.length === 1 ? 'result' : 'results'}
+                  </div>
+                  <button
+                    onClick={clearFilters}
+                    className="text-[13px] font-medium text-neutral-400 hover:text-neutral-200 transition-colors"
+                  >
+                    Clear filters
+                  </button>
+                </div>
+              )}
+            </div>
+
             <ReflectionPanel />
 
             {error && (
