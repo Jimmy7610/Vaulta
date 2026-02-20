@@ -4,6 +4,7 @@ import { useUIStore } from "./store";
 import { QuickCaptureModal } from "../components/QuickCaptureModal";
 import { useEntriesStore } from "../features/entries/store";
 import { EntryDetail } from "../components/EntryDetail";
+import { Toast } from "../components/Toast";
 import { cn } from "../lib/cn";
 
 function snippet(text: string) {
@@ -13,11 +14,32 @@ function snippet(text: string) {
 
 export function AppShell() {
   const openQuickCapture = useUIStore((s) => s.openQuickCapture);
-  const { entries, load, select, loading, error } = useEntriesStore();
+  const closeQuickCapture = useUIStore((s) => s.closeQuickCapture);
+  const { entries, load, select, loading, error, selectedId } = useEntriesStore();
 
   useEffect(() => {
     load();
   }, [load]);
+
+  // Global Keyboard Shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      if (e.key === "c" || e.key === "C") {
+        e.preventDefault();
+        openQuickCapture();
+      } else if (e.key === "Escape") {
+        closeQuickCapture();
+        if (selectedId) select(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [openQuickCapture, closeQuickCapture, selectedId, select]);
 
   return (
     <div className="min-h-full">
@@ -73,7 +95,7 @@ export function AppShell() {
             </div>
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {entries.map((e) => (
               <button
                 key={e.id}
@@ -84,22 +106,24 @@ export function AppShell() {
                   "shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-neutral-800 hover:shadow-md hover:shadow-black/40 hover:bg-neutral-900/40"
                 )}
               >
-                <div className="flex w-full items-center justify-between mb-3">
+                <div className="mb-3 line-clamp-4 text-[14px] leading-relaxed text-neutral-300 transition-colors group-hover:text-neutral-100">
+                  {snippet(e.text)}
+                </div>
+
+                <div className="mt-auto pt-4 flex w-full items-center justify-between border-t border-neutral-900/40 pt-3">
                   <div className="text-[10px] font-medium uppercase tracking-widest text-neutral-500">{e.meta?.type ?? "unfiled"}</div>
                   <div className="text-[10px] font-medium text-neutral-600">{new Date(e.createdAt).toLocaleDateString()}</div>
                 </div>
 
-                <div className="mb-2 line-clamp-4 text-[14px] leading-relaxed text-neutral-300 transition-colors group-hover:text-neutral-100">
-                  {snippet(e.text)}
-                </div>
-
-                <div className="mt-auto pt-4 flex flex-wrap gap-1.5 self-start">
-                  {(e.meta?.themes ?? []).slice(0, 3).map((t) => (
-                    <span key={t} className="rounded-md border border-neutral-800/60 bg-neutral-900/30 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-neutral-400">
-                      {t}
-                    </span>
-                  ))}
-                </div>
+                {e.meta?.themes && e.meta.themes.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-1.5 self-start">
+                    {e.meta.themes.slice(0, 3).map((t) => (
+                      <span key={t} className="rounded-md border border-neutral-800/60 bg-neutral-900/30 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-neutral-400">
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </button>
             ))}
           </div>
@@ -108,6 +132,7 @@ export function AppShell() {
 
       <QuickCaptureModal />
       <EntryDetail />
+      <Toast />
     </div>
   );
 }

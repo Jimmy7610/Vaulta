@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from "react";
 export function QuickCaptureModal() {
   const open = useUIStore((s) => s.quickCaptureOpen);
   const close = useUIStore((s) => s.closeQuickCapture);
+  const showToast = useUIStore((s) => s.showToast);
   const createEntry = useEntriesStore((s) => s.create);
   const [text, setText] = useState("");
   const ref = useRef<HTMLTextAreaElement | null>(null);
@@ -74,6 +75,7 @@ export function QuickCaptureModal() {
                     const t = text.trim();
                     if (!t) return;
                     await createEntry(t);
+                    showToast("Saved fragment");
                     setText("");
                     close();
                   }
@@ -96,6 +98,7 @@ export function QuickCaptureModal() {
                     const t = text.trim();
                     if (t) {
                       await createEntry(t);
+                      showToast("Saved fragment");
                       setText("");
                     }
                     close();

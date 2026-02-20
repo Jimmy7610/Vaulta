@@ -2,10 +2,11 @@ export async function getModels(): Promise<string[]> {
     const base = import.meta.env.VITE_SERVER_URL ?? "http://localhost:8787";
     try {
         const res = await fetch(`${base}/ollama/models`);
+        if (!res.ok) throw new Error("Offline");
         const data = await res.json();
         return Array.isArray(data?.models) ? data.models : [];
     } catch {
-        return [];
+        throw new Error("OLLAMA_OFFLINE");
     }
 }
 
