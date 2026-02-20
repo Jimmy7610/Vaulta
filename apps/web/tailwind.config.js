@@ -6,9 +6,9 @@ export default {
     extend: {
       borderRadius: {
         xl: "1rem",
-        "2xl": "1.5rem"
-      }
-    }
+        "2xl": "1.5rem",
+      },
+    },
   },
-  plugins: []
+  plugins: [],
 };
