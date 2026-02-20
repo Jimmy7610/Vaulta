@@ -1,4 +1,4 @@
-import { Plus, Search } from "lucide-react";
+import { Search, Video, MoreHorizontal, Menu } from "lucide-react";
 import { useEffect } from "react";
 import { useUIStore } from "./store";
 import { QuickCaptureModal } from "../components/QuickCaptureModal";
@@ -44,38 +44,47 @@ export function AppShell() {
   return (
     <div className="min-h-full">
       <header className="sticky top-0 z-10 border-b border-neutral-900 bg-[var(--bg)]/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-[1000px] items-center justify-between px-6 py-5">
-          <div className="flex items-baseline gap-3">
-            <div className="text-[20px] font-medium tracking-tight text-neutral-100">Vaulta</div>
-            <div className="text-xs text-neutral-500">A calm place for unfinished thoughts.</div>
+        <div className="mx-auto flex max-w-[1200px] items-center justify-between px-6 py-5">
+          <div className="flex items-center gap-4">
+            <button className="text-neutral-400 hover:text-neutral-200 transition-colors">
+              <Menu className="h-5 w-5" />
+            </button>
+            <div className="text-[22px] font-medium tracking-tight text-neutral-100 font-serif">Vaulta</div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
             <button
-              className="hidden items-center gap-2 rounded-2xl border border-neutral-800 bg-neutral-900/30 px-3 py-2 text-sm text-neutral-200 hover:bg-neutral-900 md:flex"
-              aria-label="Search (coming soon)"
+              className="hidden items-center text-neutral-400 hover:text-neutral-200 transition-colors md:flex"
+              aria-label="Search"
             >
-              <Search className="h-4 w-4" />
-              Search
+              <Search className="h-5 w-5" />
+            </button>
+            <button
+              className="hidden items-center text-neutral-400 hover:text-neutral-200 transition-colors md:flex"
+              aria-label="Video"
+            >
+              <Video className="h-5 w-5" />
             </button>
 
             <button
               onClick={openQuickCapture}
-              className="flex items-center gap-2 rounded-2xl bg-neutral-100 px-3 py-2 text-sm font-semibold text-neutral-950 hover:opacity-90"
+              className="flex items-center gap-2 rounded-lg bg-neutral-800/80 px-4 py-1.5 text-sm font-medium text-neutral-200 hover:bg-neutral-700 transition-colors ml-2"
             >
-              <Plus className="h-4 w-4" />
               Capture
+            </button>
+
+            <button className="text-neutral-500 hover:text-neutral-400 ml-2">
+              <MoreHorizontal className="h-5 w-5" />
             </button>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1000px] px-6 py-10">
-        <div className="mb-10">
-          <div className="text-[13px] font-medium tracking-wide text-neutral-500 uppercase">Vault</div>
-          <h1 className="mt-2 text-neutral-100">Fragments, safely held.</h1>
-          <p className="mt-2 max-w-xl text-[15px] leading-relaxed text-neutral-400">
-            Vaulta is local-first. You capture quickly; the system connects the dots later.
+      <main className="mx-auto max-w-[1200px] px-6 py-12">
+        <div className="mb-12">
+          <h1 className="text-[42px] leading-tight text-neutral-100 font-serif">Fragments, safely held.</h1>
+          <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-neutral-400 font-serif italic">
+            Vaulta is local-first. You capture quickly, the system connects the dots later.
           </p>
         </div>
 
@@ -106,24 +115,31 @@ export function AppShell() {
                   "shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-neutral-800 hover:shadow-md hover:shadow-black/40 hover:bg-neutral-900/40"
                 )}
               >
-                <div className="mb-3 line-clamp-4 text-[14px] leading-relaxed text-neutral-300 transition-colors group-hover:text-neutral-100">
+                <div className="flex w-full items-start justify-between mb-4">
+                  <div className="rounded-md bg-neutral-800/50 px-2 py-0.5 text-[11px] font-medium text-neutral-400">
+                    {e.meta?.type ?? "unfiled"}
+                  </div>
+                  <MoreHorizontal className="h-4 w-4 text-neutral-500" />
+                </div>
+
+                <div className="mb-5 line-clamp-3 text-[18px] leading-[1.4] text-neutral-200 font-serif">
                   {snippet(e.text)}
                 </div>
 
-                <div className="mt-auto pt-4 flex w-full items-center justify-between border-t border-neutral-900/40 pt-3">
-                  <div className="text-[10px] font-medium uppercase tracking-widest text-neutral-500">{e.meta?.type ?? "unfiled"}</div>
-                  <div className="text-[10px] font-medium text-neutral-600">{new Date(e.createdAt).toLocaleDateString()}</div>
-                </div>
-
-                {e.meta?.themes && e.meta.themes.length > 0 && (
-                  <div className="mt-3 flex flex-wrap gap-1.5 self-start">
-                    {e.meta.themes.slice(0, 3).map((t) => (
-                      <span key={t} className="rounded-md border border-neutral-800/60 bg-neutral-900/30 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-neutral-400">
-                        {t}
-                      </span>
-                    ))}
+                <div className="mt-auto pt-2 w-full">
+                  {e.meta?.themes && e.meta.themes.length > 0 && (
+                    <div className="mb-3 flex flex-wrap gap-1.5">
+                      {e.meta.themes.slice(0, 3).map((t) => (
+                        <span key={t} className="rounded-full border border-neutral-800 bg-neutral-900/20 px-2.5 py-0.5 text-[11px] font-medium text-neutral-500">
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <div className="text-[11px] font-medium text-neutral-600">
+                    {new Date(e.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                   </div>
-                )}
+                </div>
               </button>
             ))}
           </div>

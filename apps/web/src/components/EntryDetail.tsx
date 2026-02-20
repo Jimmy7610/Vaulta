@@ -77,14 +77,13 @@ export function EntryDetail() {
                         transition={{ type: "spring", stiffness: 260, damping: 26 }}
                     >
                         {/* Header */}
-                        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-neutral-900/50 bg-neutral-950/30 px-6 py-5 backdrop-blur-sm">
+                        <div className="flex shrink-0 items-start justify-between gap-3 px-8 py-8">
                             <div className="min-w-0">
-                                <div className="text-[11px] font-medium uppercase tracking-wider text-neutral-500">Entry</div>
-                                <div className="mt-1 truncate text-lg font-medium tracking-tight text-neutral-100">Fragment detail</div>
+                                <div className="text-[16px] text-neutral-400">Fragment</div>
                             </div>
                             <button
                                 onClick={() => select(null)}
-                                className="rounded-xl border border-neutral-800/60 bg-neutral-900/30 p-2 text-neutral-400 transition-colors hover:bg-neutral-800 hover:text-neutral-200"
+                                className="text-neutral-500 transition-colors hover:text-neutral-300"
                                 aria-label="Close"
                             >
                                 <X className="h-5 w-5" />
@@ -92,12 +91,16 @@ export function EntryDetail() {
                         </div>
 
                         {/* Body scroll */}
-                        <div className="flex-1 flex flex-col gap-6 overflow-y-auto p-6 scrollbar-hide">
-                            {/* Entry Card */}
-                            <div className="rounded-[20px] border border-neutral-900 bg-neutral-950/40 p-5 shadow-sm">
-                                <div className="whitespace-pre-wrap text-[15px] leading-relaxed text-neutral-200">{entry.text}</div>
-                                <div className="mt-4 text-[11px] font-medium text-neutral-600">{new Date(entry.createdAt).toLocaleString()}</div>
+                        <div className="flex-1 flex flex-col overflow-y-auto px-8 pb-8 scrollbar-hide">
+                            {/* Entry Content */}
+                            <div className="mb-8">
+                                <div className="whitespace-pre-wrap text-[22px] font-serif leading-[1.4] text-neutral-100">{entry.text}</div>
+                                <div className="mt-4 text-[13px] text-neutral-500">
+                                    {new Date(entry.createdAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })} at {new Date(entry.createdAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
+                                </div>
                             </div>
+
+                            <hr className="border-neutral-900/60 mb-8" />
 
                             {/* Analysis Card */}
                             {isOffline ? (
@@ -111,48 +114,45 @@ export function EntryDetail() {
                                     </p>
                                 </div>
                             ) : (
-                                <div className="rounded-[20px] border border-neutral-900 bg-neutral-950/40 p-1 shadow-sm">
+                                <div className="flex flex-col">
                                     {/* Header / Actions */}
-                                    <div className="flex flex-col gap-4 rounded-[16px] bg-neutral-950/80 p-4 lg:flex-row lg:items-center lg:justify-between">
-                                        <div>
-                                            <div className="text-sm font-medium tracking-tight text-neutral-200">Analysis</div>
-                                            <div className="mt-0.5 text-[12px] text-neutral-500">Local intelligence. Quiet, hidden.</div>
-                                        </div>
+                                    <div className="mb-6">
+                                        <div className="text-[16px] text-neutral-300">Analysis</div>
+                                    </div>
 
-                                        <div className="flex items-center gap-3">
-                                            <div className="relative flex items-center">
-                                                {modelsLoading ? (
-                                                    <span className="text-[12px] text-neutral-500">Loading models…</span>
-                                                ) : models.length === 0 ? (
-                                                    <span className="text-[12px] text-red-400">No models found. Run: ollama pull llama3.2</span>
-                                                ) : (
-                                                    <div className="relative flex items-center">
-                                                        <select
-                                                            className="appearance-none rounded-xl border border-neutral-800 bg-neutral-900/60 py-1.5 pl-3 pr-8 text-[12px] font-medium text-neutral-300 outline-none transition-colors hover:border-neutral-700 focus:border-neutral-500 focus:bg-neutral-900"
-                                                            value={selectedModel || (models.length > 0 ? models[0] : "")}
-                                                            onChange={(e) => setSelectedModel(e.target.value)}
-                                                        >
-                                                            {models.map(m => <option key={m} value={m}>{m}</option>)}
-                                                        </select>
-                                                        <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-500">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
-                                                        </div>
+                                    <div className="flex items-center gap-3 mb-8">
+                                        <div className="relative flex items-center flex-1">
+                                            {modelsLoading ? (
+                                                <span className="text-[13px] text-neutral-500">Loading models…</span>
+                                            ) : models.length === 0 ? (
+                                                <span className="text-[13px] text-red-500/80">Ollama models not found.</span>
+                                            ) : (
+                                                <div className="relative flex items-center w-full">
+                                                    <select
+                                                        className="appearance-none w-full rounded-lg border border-neutral-800/60 bg-neutral-900/40 py-2.5 pl-4 pr-8 text-[13px] font-medium text-neutral-300 outline-none transition-colors hover:border-neutral-700 focus:border-neutral-500"
+                                                        value={selectedModel || (models.length > 0 ? models[0] : "")}
+                                                        onChange={(e) => setSelectedModel(e.target.value)}
+                                                    >
+                                                        {models.map(m => <option key={m} value={m}>{m}</option>)}
+                                                    </select>
+                                                    <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-neutral-600">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
                                                     </div>
-                                                )}
-                                            </div>
-                                            <button
-                                                onClick={onAnalyze}
-                                                disabled={busy || (!modelsLoading && models.length === 0) || success}
-                                                className={cn(
-                                                    "flex items-center gap-2 rounded-xl px-3 py-1.5 text-[13px] font-medium transition-all",
-                                                    (busy || success || (!modelsLoading && models.length === 0)) ? "bg-neutral-900 text-neutral-600" : "bg-neutral-100 text-neutral-950 hover:bg-white/90 hover:shadow-sm",
-                                                    success && "bg-green-500/10 text-green-400"
-                                                )}
-                                            >
-                                                {success ? <Check className="h-4 w-4" /> : busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                                                {success ? "Done" : busy ? "Analyzing…" : "Analyze"}
-                                            </button>
+                                                </div>
+                                            )}
                                         </div>
+                                        <button
+                                            onClick={onAnalyze}
+                                            disabled={busy || (!modelsLoading && models.length === 0) || success}
+                                            className={cn(
+                                                "flex items-center gap-2 rounded-lg px-5 py-2.5 text-[13px] font-medium transition-all shadow-sm",
+                                                (busy || success || (!modelsLoading && models.length === 0)) ? "bg-neutral-800/50 text-neutral-500 border border-neutral-800/50" : "bg-neutral-800/80 text-neutral-200 hover:bg-neutral-700 border border-neutral-700/50",
+                                                success && "bg-neutral-800/80 text-neutral-300"
+                                            )}
+                                        >
+                                            {success ? <Check className="h-4 w-4" /> : busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                                            {success ? "Done" : busy ? "Analyzing…" : "Analyze"}
+                                        </button>
                                     </div>
 
                                     {err && (
@@ -162,37 +162,37 @@ export function EntryDetail() {
                                     )}
 
                                     {/* Metadata Display */}
-                                    {entry.meta ? (
-                                        <div className="px-4 pb-4 pt-2">
+                                    {entry.meta && (
+                                        <div className="flex flex-col gap-4">
                                             {/* Themes Chips */}
-                                            <div className="flex flex-wrap gap-1.5 mb-5">
-                                                {entry.meta.themes.map((t) => (
-                                                    <span key={t} className="rounded-md border border-neutral-800/60 bg-neutral-900/30 px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide text-neutral-400">
-                                                        {t}
-                                                    </span>
-                                                ))}
+                                            {entry.meta.themes && entry.meta.themes.length > 0 && (
+                                                <div className="flex flex-wrap gap-2">
+                                                    {entry.meta.themes.map((t) => (
+                                                        <span key={t} className="rounded-full border border-neutral-800 bg-neutral-900/20 px-3 py-1 text-[12px] text-neutral-400">
+                                                            {t}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
+
+                                            {/* Tone / Type Box */}
+                                            <div className="rounded-xl border border-neutral-800/60 bg-neutral-900/30 p-5 flex flex-col gap-3">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-[13px] font-medium text-neutral-300 w-12">Tone</span>
+                                                    <span className="text-[14px] text-neutral-400">{entry.meta.tone}</span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-[13px] font-medium text-neutral-300 w-12">Type</span>
+                                                    <span className="text-[14px] text-neutral-400">{entry.meta.type}</span>
+                                                </div>
                                             </div>
 
-                                            {/* Badges row */}
-                                            <div className="flex flex-wrap items-center gap-3 mb-4">
-                                                <div className="flex items-center gap-2 rounded-lg bg-neutral-900/30 px-2.5 py-1.5 border border-neutral-800/50">
-                                                    <span className="text-[10px] uppercase tracking-wider text-neutral-500">Tone</span>
-                                                    <span className="text-[12px] font-medium text-neutral-200">{entry.meta.tone}</span>
-                                                </div>
-                                                <div className="flex items-center gap-2 rounded-lg bg-neutral-900/30 px-2.5 py-1.5 border border-neutral-800/50">
-                                                    <span className="text-[10px] uppercase tracking-wider text-neutral-500">Type</span>
-                                                    <span className="text-[12px] font-medium text-neutral-200">{entry.meta.type}</span>
-                                                </div>
-                                            </div>
-
-                                            {/* Summary Callout */}
-                                            <div className="rounded-xl border border-neutral-800/50 bg-neutral-900/20 px-4 py-3">
-                                                <div className="text-[10px] font-medium uppercase tracking-wider text-neutral-500 mb-1">Summary</div>
-                                                <div className="text-[14px] leading-relaxed text-neutral-300">{entry.meta.summary}</div>
+                                            {/* Summary Box */}
+                                            <div className="rounded-xl border border-neutral-800/60 bg-neutral-900/30 p-5 mt-2">
+                                                <div className="text-[13px] font-medium text-neutral-300 mb-2">Summary</div>
+                                                <div className="text-[14px] leading-relaxed text-neutral-400">{entry.meta.summary}</div>
                                             </div>
                                         </div>
-                                    ) : (
-                                        <div className="px-4 pb-4 pt-1 text-[13px] text-neutral-500">Analysis pending. Click above to extract metadata.</div>
                                     )}
                                 </div>
                             )}
