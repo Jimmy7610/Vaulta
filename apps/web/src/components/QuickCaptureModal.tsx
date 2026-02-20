@@ -1,12 +1,15 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useUIStore } from "../app/store";
+import { useEntriesStore } from "../features/entries/store";
 import { X } from "lucide-react";
 import { cn } from "../lib/cn";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function QuickCaptureModal() {
   const open = useUIStore((s) => s.quickCaptureOpen);
   const close = useUIStore((s) => s.closeQuickCapture);
+  const createEntry = useEntriesStore((s) => s.create);
+  const [text, setText] = useState("");
   const ref = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
@@ -63,6 +66,18 @@ export function QuickCaptureModal() {
             <div className="px-5 pb-5">
               <textarea
                 ref={ref}
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                onKeyDown={async (e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    const t = text.trim();
+                    if (!t) return;
+                    await createEntry(t);
+                    setText("");
+                    close();
+                  }
+                }}
                 placeholder="Write anything… a game mechanic, a prompt idea, a sentence, a weird thought."
                 className={cn(
                   "min-h-[180px] w-full resize-none rounded-2xl",
@@ -73,11 +88,18 @@ export function QuickCaptureModal() {
               />
               <div className="mt-4 flex items-center justify-between">
                 <div className="text-xs text-neutral-500">
-                  Enter saves (wired in v0.2). Esc closes.
+                  Enter saves. Shift+Enter for newline. Esc closes.
                 </div>
                 <button
                   className="rounded-2xl bg-neutral-100 px-4 py-2 text-sm font-semibold text-neutral-950 hover:opacity-90"
-                  onClick={close}
+                  onClick={async () => {
+                    const t = text.trim();
+                    if (t) {
+                      await createEntry(t);
+                      setText("");
+                    }
+                    close();
+                  }}
                 >
                   Done
                 </button>
