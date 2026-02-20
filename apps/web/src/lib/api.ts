@@ -33,3 +33,26 @@ export async function analyze(text: string, model?: string | null): Promise<{
     }
     return data.meta;
 }
+
+export async function reflect(entries: import('./../data/db').Entry[], model?: string | null): Promise<{
+    highlights: string[];
+    themes: string[];
+    note: string;
+}> {
+    const base = import.meta.env.VITE_SERVER_URL ?? "http://localhost:8787";
+    const res = await fetch(`${base}/reflect`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ entries, model: model || undefined })
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data?.ok) {
+        const msg =
+            data?.code === "OLLAMA_UNREACHABLE"
+                ? "Ollama is not running (or not reachable)."
+                : data?.message ?? "Reflect failed.";
+        throw new Error(msg);
+    }
+    return data.reflection;
+}

@@ -4,6 +4,7 @@ import { useUIStore } from "./store";
 import { QuickCaptureModal } from "../components/QuickCaptureModal";
 import { useEntriesStore, useFilteredEntries } from "../features/entries/store";
 import { EntryDetail } from "../components/EntryDetail";
+import { ReflectionPanel } from "../components/ReflectionPanel";
 import { Toast } from "../components/Toast";
 import { cn } from "../lib/cn";
 import { useMemo } from "react";
@@ -193,6 +194,8 @@ export function AppShell() {
             </div>
           )}
         </div>
+
+        <ReflectionPanel />
 
         {error && (
           <div className="mb-4 rounded-2xl border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">

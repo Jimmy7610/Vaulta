@@ -100,3 +100,64 @@ USER NOTE:
 
     return { themes, tone, type, summary };
 }
+
+export async function ollamaReflect(opts: {
+    entries: any[];
+    model?: string;
+    baseUrl?: string;
+}): Promise<{
+    highlights: string[];
+    themes: string[];
+    note: string;
+}> {
+    const baseUrl = opts.baseUrl ?? "http://localhost:11434";
+    const model = opts.model ?? "llama3.1:latest";
+
+    const prompt = `
+You are a quiet metadata engine for a personal idea vault app.
+The user has provided a set of fragment notes spanning a recent period.
+
+Produce a JSON ONLY response with exactly these keys:
+- highlights: array of exactly 3 interesting summary bullet points from the fragments.
+- themes: array of up to 5 broad themes covering the fragments, lowercase.
+- note: one single sentence summarizing the collection. Neutral, calm, no advice, no judgement. Act as a neutral mirror.
+
+Return STRICT JSON. No markdown. No extra text.
+
+FRAGMENTS:
+${opts.entries.map(e => `[${new Date(e.createdAt).toISOString()}] ${e.text}`).join("\n\n")}
+`.trim();
+
+    const res = await fetch(`${baseUrl}/api/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            model,
+            prompt,
+            stream: false
+        })
+    });
+
+    if (!res.ok) {
+        const t = await res.text().catch(() => "");
+        throw new Error(`Ollama generate failed: ${res.status} ${t}`.trim());
+    }
+
+    const data = (await res.json()) as OllamaGenerateResponse;
+    const raw = (data.response ?? "").trim();
+
+    let parsed: any;
+    try {
+        parsed = JSON.parse(raw);
+    } catch {
+        const m = raw.match(/\{[\s\S]*\}/);
+        if (!m) throw new Error("Ollama returned non-JSON response");
+        parsed = JSON.parse(m[0]);
+    }
+
+    const highlights = Array.isArray(parsed.highlights) ? parsed.highlights.map(String).slice(0, 3) : [];
+    const themes = Array.isArray(parsed.themes) ? parsed.themes.map(String).slice(0, 5) : [];
+    const note = typeof parsed.note === "string" ? parsed.note : "";
+
+    return { highlights, themes, note };
+}

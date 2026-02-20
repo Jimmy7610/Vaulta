@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import { analyzeTextWithOllama, checkOllama, listOllamaModels, getDefaultModel } from "./ollama";
+import { analyzeTextWithOllama, checkOllama, listOllamaModels, getDefaultModel, ollamaReflect } from "./ollama";
 
 const app = express();
 app.use(cors());
@@ -61,6 +61,47 @@ app.post("/analyze", async (req, res) => {
             ok: false,
             code: "ANALYZE_FAILED",
             message: e?.message ?? "Analyze failed"
+        });
+    }
+});
+
+app.post("/reflect", async (req, res) => {
+    const entries = Array.isArray(req.body?.entries) ? req.body.entries : [];
+    if (entries.length === 0) {
+        return res.status(400).json({ ok: false, message: "Missing or empty 'entries' array" });
+    }
+
+    let model = typeof req.body?.model === "string" && req.body.model ? req.body.model : null;
+
+    const ollamaStatus = await checkOllama(OLLAMA_BASE_URL);
+    if (!ollamaStatus.ok) {
+        return res.status(503).json({
+            ok: false,
+            code: "OLLAMA_UNREACHABLE",
+            message: `Ollama not reachable at ${OLLAMA_BASE_URL}`,
+            details: ollamaStatus.message ?? null
+        });
+    }
+
+    if (!model) {
+        model = await getDefaultModel(OLLAMA_BASE_URL);
+        if (!model) {
+            return res.status(409).json({
+                ok: false,
+                code: "NO_MODELS",
+                message: "No models installed in Ollama."
+            });
+        }
+    }
+
+    try {
+        const reflection = await ollamaReflect({ entries, model, baseUrl: OLLAMA_BASE_URL });
+        return res.json({ ok: true, reflection });
+    } catch (e: any) {
+        return res.status(500).json({
+            ok: false,
+            code: "REFLECT_FAILED",
+            message: e?.message ?? "Reflection generation failed"
         });
     }
 });
