@@ -1,4 +1,4 @@
-import { Search, Video, MoreHorizontal, Menu } from "lucide-react";
+import { Search, MoreHorizontal } from "lucide-react";
 import { useEffect } from "react";
 import { useUIStore } from "./store";
 import { QuickCaptureModal } from "../components/QuickCaptureModal";
@@ -105,9 +105,6 @@ export function AppShell() {
       <header className="sticky top-0 z-10 border-b border-neutral-900 bg-[var(--bg)]/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-[1200px] items-center justify-between px-6 py-5">
           <div className="flex items-center gap-4">
-            <button className="text-neutral-400 hover:text-neutral-200 transition-colors">
-              <Menu className="h-5 w-5" />
-            </button>
             <div className="text-[22px] font-medium tracking-tight text-neutral-100 font-serif flex items-center gap-3">
               Vaulta
 
@@ -139,27 +136,10 @@ export function AppShell() {
 
           <div className="flex items-center gap-4">
             <button
-              className="hidden items-center text-neutral-400 hover:text-neutral-200 transition-colors md:flex"
-              aria-label="Search"
-            >
-              <Search className="h-5 w-5" />
-            </button>
-            <button
-              className="hidden items-center text-neutral-400 hover:text-neutral-200 transition-colors md:flex"
-              aria-label="Video"
-            >
-              <Video className="h-5 w-5" />
-            </button>
-
-            <button
               onClick={openQuickCapture}
-              className="flex items-center gap-2 rounded-lg bg-neutral-800/80 px-4 py-1.5 text-sm font-medium text-neutral-200 hover:bg-neutral-700 transition-colors ml-2"
+              className="flex items-center gap-2 rounded-lg bg-neutral-800/80 px-4 py-1.5 text-sm font-medium text-neutral-200 hover:bg-neutral-700 transition-colors"
             >
               Capture
-            </button>
-
-            <button className="text-neutral-500 hover:text-neutral-400 ml-2">
-              <MoreHorizontal className="h-5 w-5" />
             </button>
           </div>
         </div>
