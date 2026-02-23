@@ -115,7 +115,7 @@ export function AppShell() {
       <header className="sticky top-0 z-10 border-b border-neutral-900 bg-[var(--bg)]/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-[1200px] items-center justify-between px-6 py-5">
           <div className="flex items-center gap-4">
-            <div className="text-[22px] font-medium tracking-tight text-neutral-100 font-serif flex items-center gap-3">
+            <div className="text-[22px] font-medium tracking-tight text-neutral-100 flex items-center gap-3">
               Vaulta
             </div>
           </div>
@@ -145,8 +145,8 @@ export function AppShell() {
 
       <main className="mx-auto w-full max-w-[1200px] px-6 py-12">
         <div className="mb-12">
-          <h1 className="text-[42px] leading-tight text-neutral-100 font-serif">Fragments, safely held.</h1>
-          <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-neutral-400 font-serif italic mb-8">
+          <h1 className="text-[42px] leading-tight text-neutral-100">Fragments, safely held.</h1>
+          <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-neutral-400 italic mb-8">
             Vaulta is local-first. You capture quickly, the system connects the dots later.
           </p>
 
@@ -264,7 +264,7 @@ export function AppShell() {
                       onClick={() => select(e.id)}
                       className="group relative flex flex-col items-start text-left w-full h-full cursor-pointer rounded-[16px] border border-green-900/30 bg-green-950/5 p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-green-800/50 hover:shadow-md hover:bg-green-900/10"
                     >
-                      <div className="mb-3 line-clamp-2 text-[15px] leading-[1.4] text-neutral-200 font-serif">
+                      <div className="mb-3 line-clamp-2 text-[15px] leading-[1.4] text-neutral-200">
                         {snippet(e.text)}
                       </div>
                       <div className="mt-auto pt-2 w-full flex items-center justify-between">
@@ -308,7 +308,7 @@ export function AppShell() {
                         </div>
                       </div>
 
-                      <div className="mb-5 line-clamp-3 text-[18px] leading-[1.4] text-neutral-200 font-serif">
+                      <div className="mb-5 line-clamp-3 text-[18px] leading-[1.4] text-neutral-200">
                         {snippet(e.text)}
                       </div>
 
@@ -374,7 +374,7 @@ export function AppShell() {
         )}
       </main>
 
-      <footer className="mt-8 mb-12 text-center text-[13px] text-neutral-500 font-medium font-serif italic">
+      <footer className="mt-8 mb-12 text-center text-[13px] text-neutral-500 font-medium italic">
         Vaulta v{VAULTA_VERSION}
       </footer>
 

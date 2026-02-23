@@ -17,7 +17,6 @@ body {
 }
 
 @theme {
-  --font-serif: "Playfair Display", serif;
   --radius-xl: 1rem;
   --radius-2xl: 1.5rem;
 }

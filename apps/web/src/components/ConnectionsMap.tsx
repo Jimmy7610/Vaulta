@@ -76,7 +76,7 @@ export function ConnectionsMap() {
     if (graphData.nodes.length < 2 || graphData.links.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center py-24 px-6 text-center max-w-lg mx-auto border border-neutral-900/60 rounded-3xl bg-neutral-950/40 mt-12">
-                <div className="text-[15px] text-neutral-300 font-serif italic mb-2">
+                <div className="text-[15px] text-neutral-300 italic mb-2">
                     No connections yet.
                 </div>
                 <div className="text-[13px] text-neutral-500">
@@ -91,8 +91,8 @@ export function ConnectionsMap() {
 
             {/* Subtle Context Label */}
             <div className="absolute top-10 pointer-events-none z-0 flex flex-col items-center opacity-40">
-                <div className="text-[20px] font-serif text-neutral-300">Connections Map</div>
-                <div className="text-[12px] italic font-serif text-neutral-500 mt-1 tracking-wide">Fragments linked by shared themes.</div>
+                <div className="text-[20px] text-neutral-300">Connections Map</div>
+                <div className="text-[12px] italic text-neutral-500 mt-1 tracking-wide">Fragments linked by shared themes.</div>
             </div>
 
             {/* Minimal Map UI Controls */}
@@ -147,7 +147,7 @@ export function ConnectionsMap() {
                     linkWidth={(l: any) => Math.min(4, 0.8 + l.value * 0.6)} // slightly thicker
                     onNodeHover={(n: any) => setHoverNode(n || null)}
                     onNodeClick={(n: any) => select(n.id)}
-                    nodeLabel={(n: any) => `<div style="padding:4px; border-radius:4px; max-width:260px; word-wrap:break-word; font-family:'Playfair Display',serif; font-size:13px; color:#e5e5e5; background:rgba(10,10,10,0.9); border:1px solid rgba(38,38,38,0.8);">${n.label}<br/><div style="margin-top:6px;font-size:11px;color:#737373">${n.themes.join(' • ')}</div></div>`}
+                    nodeLabel={(n: any) => `<div style="padding:4px; border-radius:4px; max-width:260px; word-wrap:break-word; font-family:Inter,sans-serif; font-size:13px; color:#e5e5e5; background:rgba(10,10,10,0.9); border:1px solid rgba(38,38,38,0.8);">${n.label}<br/><div style="margin-top:6px;font-size:11px;color:#737373">${n.themes.join(' • ')}</div></div>`}
                     nodePointerAreaPaint={(node, color, ctx) => {
                         ctx.fillStyle = color;
                         const bckgDimensions = [ctx.measureText(node.label as string).width, 12].map(n => n + 12 * 0.2); // match render
@@ -167,7 +167,7 @@ export function ConnectionsMap() {
                         ctx.globalAlpha = isDimmed ? 0.15 : 1.0;
                         const label = node.label;
                         const fontSize = 12 / globalScale;
-                        ctx.font = `${fontSize}px "Playfair Display", serif`;
+                        ctx.font = `${fontSize}px Inter, sans-serif`;
                         const textWidth = ctx.measureText(label).width;
                         const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.2); // some padding
 

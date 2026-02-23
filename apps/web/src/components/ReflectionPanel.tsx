@@ -25,7 +25,7 @@ export function ReflectionPanel() {
         <div className="mb-10 w-full max-w-4xl rounded-3xl border border-neutral-900/60 bg-neutral-950/40 p-6 md:p-8">
             <div className="flex items-start justify-between mb-4">
                 <div className="flex flex-col">
-                    <h2 className="text-[18px] font-serif text-neutral-200 flex items-center gap-2">
+                    <h2 className="text-[18px] text-neutral-200 flex items-center gap-2">
                         <Sparkle className="h-4 w-4 text-neutral-500" />
                         Weekly Reflection
                     </h2>
@@ -59,7 +59,7 @@ export function ReflectionPanel() {
                     {error}
                 </div>
             ) : !hasReflection && !loading ? (
-                <div className="text-[14px] text-neutral-500 font-serif italic py-4">
+                <div className="text-[14px] text-neutral-500 italic py-4">
                     No reflection yet. Take a quiet moment to synthesize your recent fragments.
                 </div>
             ) : loading ? (
@@ -73,7 +73,7 @@ export function ReflectionPanel() {
                 <div className="space-y-6 mt-6">
                     {/* Note */}
                     <div className="rounded-2xl bg-neutral-900/30 p-4 border border-neutral-800/40">
-                        <p className="text-[15px] font-serif leading-relaxed text-neutral-300 italic">
+                        <p className="text-[15px] leading-relaxed text-neutral-300 italic">
                             {reflection.note}
                         </p>
                     </div>
@@ -82,7 +82,7 @@ export function ReflectionPanel() {
                     <div>
                         <ul className="space-y-2.5">
                             {reflection.highlights.map((h, i) => (
-                                <li key={i} className="flex gap-3 text-[14px] text-neutral-300 leading-relaxed font-serif">
+                                <li key={i} className="flex gap-3 text-[14px] text-neutral-300 leading-relaxed">
                                     <span className="text-neutral-600 mt-1.5 w-1.5 h-1.5 rounded-full bg-neutral-700 shrink-0" />
                                     <span>{h}</span>
                                 </li>
