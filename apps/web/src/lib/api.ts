@@ -56,3 +56,24 @@ export async function reflect(entries: import('./../data/db').Entry[], model?: s
     }
     return data.reflection;
 }
+
+export async function grow(text: string, model?: string | null): Promise<{
+    suggestions: string[];
+}> {
+    const base = import.meta.env.VITE_SERVER_URL ?? "http://localhost:8787";
+    const res = await fetch(`${base}/grow`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, model: model || undefined })
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data?.ok) {
+        const msg =
+            data?.code === "OLLAMA_UNREACHABLE"
+                ? "Ollama is not running (or not reachable)."
+                : data?.message ?? "Grow failed.";
+        throw new Error(msg);
+    }
+    return { suggestions: data.suggestions ?? [] };
+}

@@ -161,3 +161,63 @@ ${opts.entries.map(e => `[${new Date(e.createdAt).toISOString()}] ${e.text}`).jo
 
     return { highlights, themes, note };
 }
+
+export async function ollamaGrowSeed(opts: {
+    text: string;
+    model?: string;
+    baseUrl?: string;
+}): Promise<{
+    suggestions: string[];
+}> {
+    const baseUrl = opts.baseUrl ?? "http://localhost:11434";
+    const model = opts.model ?? "llama3.1:latest";
+
+    const prompt = `
+You are a quiet, thoughtful continuation engine for a personal idea vault app.
+The user has provided a fragment note they want to 'grow'.
+
+Produce a JSON ONLY response with exactly this key:
+- suggestions: array of 2 to 3 suggestions to expand or build upon this idea.
+
+Rules for suggestions:
+- Speak as a quiet continuation, not advice.
+- No motivational language or generic encouragement.
+- Exactly ONE sentence per suggestion.
+- Neutral, thoughtful, and direct.
+
+Return STRICT JSON. No markdown. No extra text.
+
+USER FRAGMENT:
+"""${opts.text}"""
+`.trim();
+
+    const res = await fetch(`${baseUrl}/api/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            model,
+            prompt,
+            stream: false
+        })
+    });
+
+    if (!res.ok) {
+        const t = await res.text().catch(() => "");
+        throw new Error(`Ollama generate failed: ${res.status} ${t}`.trim());
+    }
+
+    const data = (await res.json()) as OllamaGenerateResponse;
+    const raw = (data.response ?? "").trim();
+
+    let parsed: any;
+    try {
+        parsed = JSON.parse(raw);
+    } catch {
+        const m = raw.match(/\{[\s\S]*\}/);
+        if (!m) throw new Error("Ollama returned non-JSON response");
+        parsed = JSON.parse(m[0]);
+    }
+
+    const suggestions = Array.isArray(parsed.suggestions) ? parsed.suggestions.map(String).slice(0, 3) : [];
+    return { suggestions };
+}

@@ -4,6 +4,7 @@ export type Entry = {
     id: string;
     text: string;
     createdAt: number;
+    isSeed?: boolean;
     meta?: {
         themes: string[];
         tone: string;
@@ -98,4 +99,14 @@ export async function getLatestReflection(): Promise<Reflection | null> {
     const cursor = await index.openCursor(null, "prev");
     await tx.done;
     return cursor ? cursor.value : null;
+}
+
+export async function getAllEntries(): Promise<Entry[]> {
+    const db = await getDB();
+    return db.getAll("entries");
+}
+
+export async function getAllReflections(): Promise<Reflection[]> {
+    const db = await getDB();
+    return db.getAll("reflections");
 }

@@ -18,6 +18,7 @@ type EntriesState = {
     select: (id: string | null) => void;
     create: (text: string) => Promise<Entry>;
     setMeta: (id: string, meta: Entry["meta"]) => Promise<void>;
+    toggleSeed: (id: string, isSeed: boolean) => Promise<void>;
     remove: (id: string) => Promise<void>;
 
     setSearchQuery: (q: string) => void;
@@ -74,6 +75,16 @@ export const useEntriesStore = create<EntriesState>((set, get) => ({
         const current = get().entries.find((e) => e.id === id);
         if (!current) return;
         const updated: Entry = { ...current, meta: meta ?? undefined };
+        await updateEntry(updated);
+        set({
+            entries: get().entries.map((e) => (e.id === id ? updated : e))
+        });
+    },
+
+    toggleSeed: async (id, isSeed) => {
+        const current = get().entries.find((e) => e.id === id);
+        if (!current) return;
+        const updated: Entry = { ...current, isSeed };
         await updateEntry(updated);
         set({
             entries: get().entries.map((e) => (e.id === id ? updated : e))

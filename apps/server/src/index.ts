@@ -1,10 +1,21 @@
 import express from "express";
 import cors from "cors";
-import { analyzeTextWithOllama, checkOllama, listOllamaModels, getDefaultModel, ollamaReflect } from "./ollama";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import { analyzeTextWithOllama, checkOllama, listOllamaModels, getDefaultModel, ollamaReflect, ollamaGrowSeed } from "./ollama";
 
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+let VAULTA_VERSION = "1.0.0";
+try {
+    VAULTA_VERSION = fs.readFileSync(path.join(__dirname, "../../../VERSION.txt"), "utf8").trim();
+} catch (e) {
+    // ignore
+}
 
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL ?? "http://localhost:11434";
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL ?? "llama3.1:latest";
@@ -13,6 +24,7 @@ app.get("/health", async (_req, res) => {
     const ollama = await checkOllama(OLLAMA_BASE_URL);
     res.json({
         ok: true,
+        version: VAULTA_VERSION,
         service: "vaulta-server",
         ollama: { ok: ollama.ok, baseUrl: OLLAMA_BASE_URL, message: ollama.message ?? null }
     });
@@ -102,6 +114,47 @@ app.post("/reflect", async (req, res) => {
             ok: false,
             code: "REFLECT_FAILED",
             message: e?.message ?? "Reflection generation failed"
+        });
+    }
+});
+
+app.post("/grow", async (req, res) => {
+    const text = typeof req.body?.text === "string" ? req.body.text.trim() : "";
+    if (!text) {
+        return res.status(400).json({ ok: false, message: "Missing 'text' in request body" });
+    }
+
+    let model = typeof req.body?.model === "string" && req.body.model ? req.body.model : null;
+
+    const ollamaStatus = await checkOllama(OLLAMA_BASE_URL);
+    if (!ollamaStatus.ok) {
+        return res.status(503).json({
+            ok: false,
+            code: "OLLAMA_UNREACHABLE",
+            message: `Ollama not reachable at ${OLLAMA_BASE_URL}`,
+            details: ollamaStatus.message ?? null
+        });
+    }
+
+    if (!model) {
+        model = await getDefaultModel(OLLAMA_BASE_URL);
+        if (!model) {
+            return res.status(409).json({
+                ok: false,
+                code: "NO_MODELS",
+                message: "No models installed in Ollama."
+            });
+        }
+    }
+
+    try {
+        const result = await ollamaGrowSeed({ text, model, baseUrl: OLLAMA_BASE_URL });
+        return res.json({ ok: true, suggestions: result.suggestions });
+    } catch (e: any) {
+        return res.status(500).json({
+            ok: false,
+            code: "GROW_FAILED",
+            message: e?.message ?? "Grow failed"
         });
     }
 });

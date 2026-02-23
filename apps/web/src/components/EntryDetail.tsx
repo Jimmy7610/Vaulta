@@ -1,14 +1,14 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Sparkles, Check, Loader2, Trash2 } from "lucide-react";
+import { X, Sparkles, Check, Loader2, Trash2, Leaf } from "lucide-react";
 import { cn } from "../lib/cn";
 import { useEntriesStore, useFilteredEntries } from "../features/entries/store";
-import { analyze, getModels } from "../lib/api";
+import { analyze, getModels, grow } from "../lib/api";
 import { useSettingsStore } from "../features/settings/store";
 import { useMemo, useState, useEffect } from "react";
 import { ConfirmDialog } from "./ConfirmDialog";
 
 export function EntryDetail() {
-    const { entries, selectedId, select, setMeta, remove } = useEntriesStore();
+    const { entries, selectedId, select, setMeta, remove, toggleSeed } = useEntriesStore();
     const filteredEntries = useFilteredEntries();
     const { selectedModel, setSelectedModel } = useSettingsStore();
     const entry = useMemo(() => entries.find((e) => e.id === selectedId) ?? null, [entries, selectedId]);
@@ -20,6 +20,16 @@ export function EntryDetail() {
     const [modelsLoading, setModelsLoading] = useState(false);
     const [isOffline, setIsOffline] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+    const [growBusy, setGrowBusy] = useState(false);
+    const [growResults, setGrowResults] = useState<string[]>([]);
+    const [growErr, setGrowErr] = useState<string | null>(null);
+
+    // reset grow state on entry change
+    useEffect(() => {
+        setGrowResults([]);
+        setGrowErr(null);
+    }, [selectedId]);
 
     useEffect(() => {
         if (!entry) return;
@@ -103,6 +113,20 @@ export function EntryDetail() {
         }
     }
 
+    async function onGrow() {
+        if (!entry) return;
+        setGrowBusy(true);
+        setGrowErr(null);
+        try {
+            const result = await grow(entry.text, selectedModel);
+            setGrowResults(result.suggestions);
+        } catch (e: any) {
+            setGrowErr(e?.message ?? "Grow failed");
+        } finally {
+            setGrowBusy(false);
+        }
+    }
+
     return (
         <>
             <AnimatePresence>
@@ -138,6 +162,15 @@ export function EntryDetail() {
                                         <Trash2 className="h-4 w-4" />
                                     </button>
                                     <button
+                                        onClick={() => toggleSeed(entry.id, !entry.isSeed)}
+                                        className={cn("text-[13px] font-medium transition-colors bg-neutral-900/40 hover:bg-neutral-800 rounded-md px-3 py-1.5 flex items-center gap-1.5",
+                                            entry.isSeed ? "text-green-500 hover:text-green-400" : "text-neutral-500 hover:text-neutral-300"
+                                        )}
+                                    >
+                                        <Leaf className="h-3.5 w-3.5" />
+                                        {entry.isSeed ? "Seed" : "Mark Seed"}
+                                    </button>
+                                    <button
                                         onClick={() => setIsReadingMode(!isReadingMode)}
                                         className="text-[13px] font-medium text-neutral-500 transition-colors hover:text-neutral-300 bg-neutral-900/40 hover:bg-neutral-800 rounded-md px-3 py-1.5"
                                     >
@@ -171,6 +204,43 @@ export function EntryDetail() {
                                             {new Date(entry.createdAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })} at {new Date(entry.createdAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
                                         </div>
                                     </div>
+
+                                    {entry.isSeed && !isReadingMode && (
+                                        <div className="mb-8 rounded-xl border border-green-900/30 bg-green-950/10 p-5 flex flex-col gap-3">
+                                            <div className="flex items-center justify-between">
+                                                <div className="text-[13px] font-medium text-green-500 flex items-center gap-2">
+                                                    <Leaf className="h-4 w-4" opacity="0.8" /> Seed
+                                                </div>
+                                                <button
+                                                    onClick={onGrow}
+                                                    disabled={growBusy || growResults.length > 0}
+                                                    className={cn(
+                                                        "flex items-center gap-2 rounded-md px-3 py-1.5 text-[12px] font-medium transition-all shadow-sm",
+                                                        (growBusy || growResults.length > 0) ? "bg-neutral-800/50 text-neutral-500 border border-neutral-800/50" : "bg-green-900/40 text-green-400 hover:bg-green-900/60 border border-green-800/50"
+                                                    )}
+                                                >
+                                                    {growBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                                                    {growBusy ? "Growing…" : growResults.length > 0 ? "Grown" : "Grow"}
+                                                </button>
+                                            </div>
+
+                                            {growErr && (
+                                                <div className="mt-2 rounded-lg bg-red-950/30 px-3 py-2 text-[12px] text-red-200/90 border border-red-900/30">
+                                                    {growErr}
+                                                </div>
+                                            )}
+
+                                            {growResults.length > 0 && (
+                                                <div className="mt-2 flex flex-col gap-3">
+                                                    {growResults.map((s, i) => (
+                                                        <div key={i} className="text-[13px] leading-relaxed text-neutral-300 pl-3 border-l-[2px] border-green-800/50 py-0.5">
+                                                            {s}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
 
                                     {!isReadingMode && (
                                         <>
